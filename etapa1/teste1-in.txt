@@ -1,0 +1,23 @@
+char
+int
+real
+bool
+
+if
+then
+else
+
+loop
+input
+output
+return
+\\ sneaky
+<=
+>=
+==
+!=
+\\\
+    mas esse vai dar erro
+///
+kkk
+!=

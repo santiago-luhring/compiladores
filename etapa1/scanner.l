@@ -4,6 +4,14 @@
 
 	int Running = 1;
 	int LineNumber = 1;
+
+	int getLineNumber(void) {
+    return LineNumber;
+	}
+
+	int isRunning(void) {
+    	return Running;
+	}
 %}
 
 %x COMMENT
@@ -27,40 +35,37 @@ return                      {return KW_RETURN;    }
 "=="                        {return OPERATOR_EQ;  }
 "!="                        {return OPERATOR_DIF; }
 
-[a-z._]+                    {hashInsert(TK_IDENTIFIER, yytext); return TK_IDENTIFIER;}
-[0-9]+						{hashInsert(LIT_INT, yytext); return LIT_INT;  }
-[0-9]+\.[0-9]+              {hashInsert(LIT_REAL, yytext); return LIT_REAL;    }
-"\n"                          {LineNumber++;        }
+[a-z._]+                    {hashInsert(yytext, TK_IDENTIFIER); return TK_IDENTIFIER;}
+[0-9]+						{hashInsert(yytext, LIT_INT); return LIT_INT;  }
+[0-9]+\.[0-9]+              {hashInsert(yytext, LIT_REAL); return LIT_REAL;    }
+"\n"                        {LineNumber++;        }
 [ \t]
 
-\\\                         {BEGIN(COMMENT);}
-'.'                         {hashInsert(LIT_CHAR, yytext); return LIT_CHAR;     }
-\"(\\.|[^"])*\"             {hashInsert(LIT_STRING, yytext); return LIT_STRING;   }
-.                           {return TOKEN_ERROR;  }
+'([^'])'                    {hashInsert(yytext, LIT_CHAR); return LIT_CHAR;}
+\"(\\.|[^"\\\n])*\"         {hashInsert(yytext, LIT_STRING); return LIT_STRING;}
 
-<COMMENT>///                {BEGIN(INITIAL);}
+"\\\\\\"                    { BEGIN(COMMENT); }
+<COMMENT>"\/\/\/"           { BEGIN(INITIAL); }
+<COMMENT>"\n"               { ++LineNumber; }
 <COMMENT>.
-<COMMENT>\n                 {++LineNumber;}
+"\\\\".*
 
-\\.*
+.                           {return TOKEN_ERROR;}
 
 %%
 
-void initMe(void){
-	hashInit();
-}
-
-int getLineNumber(void){
-	return LineNumber;
-}
-
-int isRunning(void){
-	return Running;
-}
+#include "main.c"
+#include "hash.c"
 
 int yywrap(){
     Running = 0;
     return 1;
+}
+
+void initMe(void) {
+    LineNumber = 1;
+    Running = 1;
+    hashInit();
 }
 
 

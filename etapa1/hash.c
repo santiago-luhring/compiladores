@@ -1,56 +1,80 @@
-#include "hash.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+// Referência:
+// Código majoritariamente retirado das video aulas
+//      da disciplina INF01147 da UFRGS,
+//      do Professor Marcelo Johann
 
-void hashInit(void){
-    for(int i = 0; i < HASH_SIZE; i++){
+#include "hash.h"
+
+HASH_NODE *Table[HASH_SIZE];
+
+// Inicia a tabela hash
+void hashInit(void)
+{
+    int i;
+    for (i = 0; i < HASH_SIZE; ++i)
+    {
         Table[i] = 0;
     }
 }
 
-hash_node* hashInsert(int type, char* text){
-    hash_node* newnode = hashFind(text);
-    if(newnode != NULL)
-        return newnode;
-
-    int address = hashAddress(text);
-    newnode = (hash_node*) calloc(1, sizeof(hash_node));
-    newnode->type = type;
-    newnode->text = calloc(strlen(text) + 1, sizeof(char));
-    strcpy(newnode->text, text);
-
-    newnode->next = Table[address];
-    Table[address] = newnode;
-
-    return newnode;
-}
-
-hash_node* hashFind(char *text){
-    int address = hashAddress(text);
-    hash_node* node;
-    for(node = Table[address]; node != NULL; node = node->next){
-        if(strcmp(text, node->text) == 0)
-            return node;
-    }
-    return NULL;
-}
-
-int hashAddress(char *text){
+// Multiplica os caracteres e
+// tira o resto de um primo para gerar um
+// endereço quase aleatorio
+int hashAddress(char *text)
+{
     int address = 1;
-    for(int i = 0; i < strlen(text); i++){
+    int i;
+    for (i = 0; i < strlen(text); ++i)
+    {
         address = (address * text[i]) % HASH_SIZE + 1;
     }
     return address - 1;
 }
 
-void hashPrint(void){
-    hash_node* node;
-    for(int i = 0; i < HASH_SIZE; i++){
-        if(Table[i] != NULL){
-            for(node = Table[i]; node != NULL; node = node->next){
-                printf("Table[%d] - type: %d text: %s\n", i, node->type, node->text);
-            }
+// Busca na lista encadeada do endereço
+// pelo elemento enviado
+HASH_NODE *hashFind(char *text)
+{
+    HASH_NODE *node;
+    int address = hashAddress(text);
+    for (node = Table[address]; node; node = node->next)
+        if (strcmp(node->text, text) == 0)
+        {
+            fprintf(stderr, "\n   REPEATED:");
+            return node;
+        }
+    return 0;
+}
+
+// Insere na tabela se o nó não existe ainda
+HASH_NODE *hashInsert(char *text, int type)
+{
+
+    HASH_NODE *newnode;
+    int address = hashAddress(text);
+    if ((newnode = hashFind(text)) != 0)
+    {
+        return newnode;
+    }
+    newnode = (HASH_NODE *)calloc(1, sizeof(HASH_NODE));
+    newnode->type = type;
+    newnode->text = (char *)calloc(strlen(text) + 1, sizeof(char));
+    strcpy(newnode->text, text);
+    newnode->next = Table[address];
+    Table[address] = newnode;
+    return newnode;
+}
+
+// Imprime a tabela
+void hashPrint(void)
+{
+    int i;
+    HASH_NODE *node;
+    for (i = 0; i < HASH_SIZE; ++i)
+    {
+        for (node = Table[i]; node; node = node->next)
+        {
+            printf("%d:\t %s\n", i, node->text);
         }
     }
 }
