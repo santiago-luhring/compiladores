@@ -29,7 +29,7 @@ loop                        {return KW_LOOP;      }
 input                       {return KW_INPUT;     }
 output                      {return KW_OUTPUT;    }
 return                      {return KW_RETURN;    }
-[-,;()\[\]{}=+*/<>&|~]      {return yytext[0];    }
+[-,;()\[\]{}=+*/<>&|~\%]    {return yytext[0];    }
 ">="                        {return OPERATOR_GE;  }
 "<="                        {return OPERATOR_LE;  }
 "=="                        {return OPERATOR_EQ;  }
