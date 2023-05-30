@@ -1,0 +1,18 @@
+\\\
+	multiline comment
+\\\
+
+\\ singleline comment
+
+char a = b;
+int d = 12;
+real c = 34.5;
+
+if(a == b) then
+	output("these are consecutive \"strings\"\n");
+else
+	output("\"AAAA!!\" - he said");
+
+
+
+return 'a';
