@@ -18,37 +18,24 @@ int main(int argc, char **argv)
   int corrects = 0;
   int tokenNumber = 1;
 
+  if (!argv[1])
+  {
+    fprintf(stdout, "\n No INPUTFILE \n Usage: ./etapa2 INPUTFILE \n");
+    fprintf(stdout, "\nCompilation exit. CODE 1.\n");
+    exit(1);
+  }
+
   if (0 == (yyin = fopen(argv[1], "r")))
   {
     printf("Cannot open file %s... \n", argv[1]);
-    exit(1);
-  }
-
-  if (0 == (file = fopen(argv[2], "r")))
-  {
-    printf("Cannot open file %s... \n", argv[2]);
-    exit(1);
+    fprintf(stdout, "\nCompilation exit. CODE 2.\n");
+    exit(2);
   }
 
   initMe();
-  while (isRunning())
-  {
-    token = yylex();
-
-    if (!isRunning())
-      break;
-
-    fscanf(file, "%d", &answer);
-    if (token == answer)
-    {
-      fprintf(stderr, "\n   ok = %d  \t| %d = %d \t| Line %d \t| %s", tokenNumber, token, answer, getLineNumber(), yytext);
-      ++corrects;
-    }
-    else
-      fprintf(stderr, "\nERROR = %d  \t| %d = %d \t| Line %d \t| %s", tokenNumber, token, answer, getLineNumber(), yytext);
-    ++tokenNumber;
-  }
-  fprintf(stderr, "\n\nCorrects: %d | Errors: %d\n\n", corrects, tokenNumber - corrects - 1);
-
+  yyparse();
   hashPrint();
+  fprintf(stdout, "\n Compilation successful \n exiting...\n");
+  fprintf(stdout, "\nCompilation exit. CODE 0.\n");
+  exit(0);
 }

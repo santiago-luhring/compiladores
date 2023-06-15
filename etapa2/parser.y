@@ -36,6 +36,7 @@ iny yyerror();
 %left '<' '>'
 %left '+' '-'
 %left '*' '/'
+%left '&' '|' '~'
 
 %%
 
