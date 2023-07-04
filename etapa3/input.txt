@@ -7,7 +7,7 @@ int i=1;
 int v[10] 'a' 0 0 0 0 0 0 0 0 0;
 int matrix[100]; 
 real f=2.5;
-bool b = 0;
+
 
 \\\
 Este eh um comentario 
@@ -52,12 +52,12 @@ int main ()
   {{}} {}
   }
 
-in incn (int x, int n )
+int incn (int x, int n )
   {
-  retorne x + n;
+  return x + n;
   }
+\\\
 ///
 \\ end of file
-  
 
 

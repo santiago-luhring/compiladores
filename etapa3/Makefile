@@ -33,4 +33,4 @@ y.tab.c: parser.y
 	yacc -d parser.y
 
 clean:
-	rm lex.yy.c y.tab.c *.o etapa3
+	rm lex.yy.c y.tab.c y.tab.h *.o etapa3

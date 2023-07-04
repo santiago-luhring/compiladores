@@ -1,3 +1,4 @@
+#include "hash.h"
 #include "treeAST.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,14 +18,14 @@ AST *astCreate(int type, HASH_NODE *symbol, AST* c0, AST* c1, AST* c2, AST* c3)
 
 void astPrint(int level, AST *node)
 {   
-    if(!node)
+    if(node == NULL)
         return;
     
     int i = 0;
 
     for(i = 0; i < level; i++)
         fprintf(stderr, "  ");
-    
+    fprintf(stderr, "AST( ");
     switch (node->type)
     {
     case AST_DECL      :  fprintf(stderr,"AST_DECL"); break;
@@ -73,11 +74,10 @@ void astPrint(int level, AST *node)
     case AST_NEXTARG   :  fprintf(stderr,"AST_NEXTARG"); break;
     default: fprintf(stderr, "AST_UNKNOWN"); break;
     }
-    if(node->symbol !=0)
-        fprintf(stderr, "%s", node->symbol->text);
+    if(node->symbol != NULL)
+        fprintf(stderr, ", %s )\n", node->symbol->text);
     else
-        fprintf(stderr, "oh!");
-    
+        fprintf(stderr, " )\n");
 
     for(i=0; i < MAX_CHILD; i++)
         astPrint(level+1, node->child[i]);
@@ -118,11 +118,11 @@ void decompileAST(AST *node, FILE *file){
             decompileAST(node->child[2], file); 
             break;
         case AST_TCHAR     :    
-            fprintf(file,"char"); break;
+            fprintf(file,"char "); break;
         case AST_TINT      :  
-            fprintf(file,"int"); break;
+            fprintf(file,"int "); break;
         case AST_TREAL     :  
-            fprintf(file,"real"); break;
+            fprintf(file,"real "); break;
         case AST_SYMBOL    :  
             fprintf(file, " %s ", node->symbol->text);
             break;
@@ -148,7 +148,7 @@ void decompileAST(AST *node, FILE *file){
         case AST_BLOCK     :  
             fprintf(file, "{\n");
             decompileAST(node->child[0], file);
-            fprintf(file, "}");
+            fprintf(file, "}\n");
             break;
         case AST_SQCOMM    :  
             decompileAST(node->child[0], file);
@@ -162,7 +162,7 @@ void decompileAST(AST *node, FILE *file){
             fprintf(file,";\n"); 
             break;
         case AST_ATTRIB    :  
-            fprintf(file, "%s", node->symbol->text);
+            fprintf(file, "%s =", node->symbol->text);
             decompileAST(node->child[0], file);
             fprintf(file,";\n"); 
             break;
@@ -215,7 +215,7 @@ void decompileAST(AST *node, FILE *file){
         case AST_VEC       :  
             fprintf(file,"%s[",node->symbol->text);
             decompileAST(node->child[0],file);
-            fprintf(file,"] = ");
+            fprintf(file,"]");
             break;
         case AST_ADD       :  
             decompileAST(node->child[0], file);
@@ -289,10 +289,10 @@ void decompileAST(AST *node, FILE *file){
         case AST_FUNC      :  
             fprintf(file,"%s(",node->symbol->text);
             decompileAST(node->child[0],file);
-            fprintf(file,") = "); 
+            fprintf(file,")"); 
             break;
         case AST_INPUT     :  
-            fprintf(file, "(");
+            fprintf(file, " input (");
             decompileAST(node->child[0], file);
             fprintf(file, ")");
             break;

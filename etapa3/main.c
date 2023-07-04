@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
   yyparse();
   //hashPrint();
   fprintf(stderr, "\n Compilation successful.\n");
-  fprintf(stderr,"Starting Decompilation");
+  fprintf(stderr,"\n Starting Decompilation \n");
   decompileAST(getAST(),outputfile);
   fclose(outputfile);
   exit(0);
