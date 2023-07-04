@@ -1,7 +1,16 @@
 %{
-int yylex();
-int yyerror();
+    #include "hash.h"
+    #include "treeAST.h"
+
+    int getLineNumber();
+
+    AST* ast = NULL;
 %}
+
+%union{
+    AST *ast;
+    HASH_NODE *symbol;
+}
 
 %token KW_CHAR           
 %token KW_INT            
@@ -23,20 +32,45 @@ int yyerror();
 %token OPERATOR_EQ       
 %token OPERATOR_DIF      
 
-%token TK_IDENTIFIER     
+%token<symbol> TK_IDENTIFIER     
 
-%token LIT_INT           
-%token LIT_REAL          
-%token LIT_CHAR          
-%token LIT_STRING        
+%token<symbol> LIT_INT           
+%token<symbol> LIT_REAL          
+%token<symbol> LIT_CHAR          
+%token<symbol> LIT_STRING        
 
 %token TOKEN_ERROR      
+
+%type<ast>program
+%type<ast>decl
+%type<ast>dec
+%type<ast>type
+%type<ast>literal
+%type<ast>init_v
+%type<ast>paraml
+%type<ast>nextParam
+%type<ast>param
+%type<ast>block
+%type<ast>seq_command
+%type<ast>seq_command_end
+%type<ast>command
+%type<ast>outputl
+%type<ast>nextOutput
+%type<ast>output
+%type<ast> expr
+%type<ast>argl
+%type<ast>nextArg
 
 %left '&' '|'
 %left OPERATOR_LE OPERATOR_GE OPERATOR_EQ OPERATOR_DIF '<' '>'
 %left '+' '-'
 %left '*' '/'
 %left '~'
+
+%{
+    int yylex();
+    int yyerror();
+%}
 
 %%
 
@@ -127,7 +161,7 @@ output:
     ;
 
 expr:
-    TK_IDENTIFIER
+    TK_IDENTIFIER                   {$$ = astCreate(AST_SYMBOL,$1,0,0,0,0);}
     | TK_IDENTIFIER '[' expr ']'
     | literal
     | expr '+' expr
@@ -143,7 +177,7 @@ expr:
     | expr '&' expr
     | expr '|' expr
     | expr '~' expr
-    | '(' expr ')'
+    | '(' expr ')'                  {$$ = $2;}
     | TK_IDENTIFIER '(' argl ')'
     | KW_INPUT '(' type ')'
     ;
@@ -158,6 +192,9 @@ nextArg:
     ;
 
 %%
+
+#include <stdio.h>
+#include <stdlib.h>
 
 int yyerror() {
 
