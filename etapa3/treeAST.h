@@ -20,7 +20,7 @@
 #define AST_BLOCK       13
 #define AST_SQCOMM      14
 #define AST_SQCOMMEND   15
-#define AST_COMMAND     16
+#define AST_ENDBLOCK    16
 #define AST_ATTRIB      17
 #define AST_VECATTR     18
 #define AST_OUTPUT      19
@@ -49,7 +49,6 @@
 #define AST_INPUT       42
 #define AST_ARGL        43
 #define AST_NEXTARG     44
-#define AST_ENDBLOCK    45
 
 typedef struct astnode
 {
@@ -60,5 +59,6 @@ typedef struct astnode
 
 AST *astCreate(int type, HASH_NODE *symbol, AST* c0, AST* c1, AST* c2, AST* c3);
 void astPrint(int level, AST *node);
+void decompileAST(AST *node, FILE *file);
 
 #endif

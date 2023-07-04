@@ -43,6 +43,7 @@ int main(int argc, char *argv[])
   //hashPrint();
   fprintf(stderr, "\n Compilation successful.\n");
   fprintf(stderr,"Starting Decompilation");
+  decompileAST(getAST(),outputfile);
   fclose(outputfile);
   exit(0);
 }
