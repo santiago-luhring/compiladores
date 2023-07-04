@@ -4,7 +4,7 @@
 
     int getLineNumber();
 
-    AST* ast = NULL;
+    AST* root;
 %}
 
 %union{
@@ -92,15 +92,15 @@ dec:
     ;
 
 type:
-    KW_CHAR                                             {$$=astree_create(AST_TCHAR,0,0,0,0,0);}
-    | KW_INT                                            {$$=astree_create(AST_TINT,0,0,0,0,0);}
-    | KW_REAL                                           {$$=astree_create(AST_TREAL,0,0,0,0,0);}
+    KW_CHAR                                             {$$=astCreate(AST_TCHAR,0,0,0,0,0);}
+    | KW_INT                                            {$$=astCreate(AST_TINT,0,0,0,0,0);}
+    | KW_REAL                                           {$$=astCreate(AST_TREAL,0,0,0,0,0);}
     ;
 
 literal:
-    LIT_CHAR                                            {$$=astree_create(AST_SYMBOL,$1,0,0,0,0);}
-    | LIT_INT                                           {$$=astree_create(AST_SYMBOL,$1,0,0,0,0);}
-    | LIT_REAL                                          {$$=astree_create(AST_SYMBOL,$1,0,0,0,0);}
+    LIT_CHAR                                            {$$=astCreate(AST_SYMBOL,$1,0,0,0,0);}
+    | LIT_INT                                           {$$=astCreate(AST_SYMBOL,$1,0,0,0,0);}
+    | LIT_REAL                                          {$$=astCreate(AST_SYMBOL,$1,0,0,0,0);}
     ;
 
 init_v:
@@ -114,7 +114,7 @@ paraml:
     ;
 
 nextParam:
-    ',' param nextParam                                 {$$=astCreate(AST_NXTPARAM,0,$2,$3,0,0);}
+    ',' param nextParam                                 {$$=astCreate(AST_NXTPRM,0,$2,$3,0,0);}
     |                                                   {$$=0;}
     ;
 
@@ -137,15 +137,15 @@ seq_command_end:
     ;
 
 command:
-    ';'                                                 {$$=0;}
+    ';'                                                 {$$=astCreate(AST_ENDBLOCK,0,0,0,0,0);}
     | block                                             {$$=$1;}
     | TK_IDENTIFIER '=' expr ';'                        {$$=astCreate(AST_ATTRIB,$1,$3,0,0,0);}
     | TK_IDENTIFIER '[' expr ']' '=' expr ';'           {$$=astCreate(AST_VECATTR,$1,$3,$6,0,0);}
-    | KW_OUTPUT outputl ';'                             {$$=astCreate(AST_OUTPUT,$2,0,0,0);}
+    | KW_OUTPUT outputl ';'                             {$$=astCreate(AST_OUTPUT,0,$2,0,0,0);}
     | KW_RETURN expr ';'                                {$$=astCreate(AST_RETURN,0,$2,0,0,0);}
     | KW_IF '(' expr ')' command                        {$$=astCreate(AST_IF,0,$3,$5,0,0);}
     | KW_IF '(' expr ')' command KW_ELSE command        {$$=astCreate(AST_IFELSE,0,$3,$5,$7,0);}
-    | KW_IF '(' expr ')' KW_LOOP command                {$$astCreate(AST_IFELWHILE,0,$3,$6,0,0);}
+    | KW_IF '(' expr ')' KW_LOOP command                {$$=astCreate(AST_IFELWHILE,0,$3,$6,0,0);}
     ;
 
 outputl:
@@ -185,12 +185,12 @@ expr:
     ;
 
 argl:
-    expr nextArg                                        {$$=astcreate(AST_ARGL,0,$1,$2,0,0);}
+    expr nextArg                                        {$$=astCreate(AST_ARGL,0,$1,$2,0,0);}
     ;
 
 nextArg:
-    ',' expr nextArg                                    {$$=astcreate(AST_NEXTARG,0,$2,$3,0,0);}
-    |
+    ',' expr nextArg                                    {$$=astCreate(AST_NEXTARG,0,$2,$3,0,0);}
+    |                                                   {$$=0;}
     ;
 
 %%
@@ -204,4 +204,8 @@ int yyerror() {
     fprintf(stdout, "\nCompilation exit. CODE 3.\n");
 
     exit(3);
+}
+
+AST* getAST(){
+	return root;
 }

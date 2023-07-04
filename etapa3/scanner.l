@@ -1,4 +1,5 @@
-%{
+%{	
+	#include <stdio.h>
 	#include "hash.h"
 	#include "treeAST.h"
 	#include "y.tab.h"
@@ -61,6 +62,11 @@ return                      {return KW_RETURN;    }
 int yywrap(){
     Running = 0;
     return 1;
+}
+
+FILE* inputfile(char* filename){
+    yyin = fopen(filename,"r");
+    return yyin;
 }
 
 void initMe(void) {

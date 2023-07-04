@@ -49,7 +49,7 @@
 #define AST_INPUT       42
 #define AST_ARGL        43
 #define AST_NEXTARG     44
-
+#define AST_ENDBLOCK    45
 
 typedef struct astnode
 {

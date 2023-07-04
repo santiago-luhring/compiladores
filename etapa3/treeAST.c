@@ -71,6 +71,7 @@ void astPrint(int level, AST *node)
     case AST_INPUT     :  fprintf(stderr,"AST_INPUT"); break;
     case AST_ARGL      :  fprintf(stderr,"AST_ARGL"); break;
     case AST_NEXTARG   :  fprintf(stderr,"AST_NEXTARG"); break;
+    case AST_ENDBLOCK  :  fprintf(stderr,"AST_ENDBLOCK"); break;
     default: fprintf(stderr, "AST_UNKNOWN"); break;
     }
     if(node->symbol !=0)

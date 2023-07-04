@@ -1,39 +1,48 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "hash.h"
+#include "treeAST.h"
+
 //lex.yy.h
 int yylex();
 extern char *yytext;
 extern FILE *yyin;
-
+extern FILE *inputfile();
 int isRunning(void);
 int getLineNumber(void);
 void initMe(void);
 int yyparse();
-
-int main(int argc, char **argv)
+extern AST *getAST();
+int main(int argc, char *argv[])
 {
-  FILE *file = 0;
+  FILE *outputfile;
 
 
-  if (!argv[1])
+  if(argc < 3)
   {
-    fprintf(stdout, "\n No INPUTFILE \n Usage: ./etapa2 INPUTFILE \n");
-    fprintf(stdout, "\nCompilation exit. CODE 1.\n");
+    fprintf(stderr, "\n No INPUTFILE or OUTPUTFILE \n Usage: ./etapa3 INPUTFILE OUTPUTFILE\n");
+    fprintf(stderr, "\nCompilation exit. CODE 1.\n");
     exit(1);
   }
 
-  if (0 == (yyin = fopen(argv[1], "r")))
+  if(!(inputfile(argv[1])))
   {
-    printf("Cannot open file %s... \n", argv[1]);
-    fprintf(stdout, "\nCompilation exit. CODE 2.\n");
+    fprintf(stderr,"Cannot open file... %s\n", argv[1]);
+    fprintf(stderr, "\nCompilation exit. CODE 2.\n");
     exit(2);
   }
 
+  if(!(outputfile = fopen(argv[2], "w+"))){
+		fprintf(stderr,"Cannot open file... %s\n",argv[2]);
+		fprintf(stderr,"\nCompilation exit, CODE 2.");
+    exit(2);
+	}
+
   initMe();
   yyparse();
-  hashPrint();
-  fprintf(stdout, "\n Compilation successful \n exiting...\n");
-  fprintf(stdout, "\nCompilation exit. CODE 0.\n");
+  //hashPrint();
+  fprintf(stderr, "\n Compilation successful.\n");
+  fprintf(stderr,"Starting Decompilation");
+  fclose(outputfile);
   exit(0);
 }
