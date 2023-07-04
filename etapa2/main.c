@@ -13,10 +13,7 @@ void initMe(void);
 int main(int argc, char **argv)
 {
   FILE *file = 0;
-  int token = 0;
-  int answer = 0;
-  int corrects = 0;
-  int tokenNumber = 1;
+
 
   if (!argv[1])
   {

@@ -35,7 +35,7 @@ return                      {return KW_RETURN;    }
 "=="                        {return OPERATOR_EQ;  }
 "!="                        {return OPERATOR_DIF; }
 
-[a-z._]+                    {hashInsert(yytext, TK_IDENTIFIER); return TK_IDENTIFIER;}
+[a-zA-Z._]+                    {hashInsert(yytext, TK_IDENTIFIER); return TK_IDENTIFIER;}
 [0-9]+						{hashInsert(yytext, LIT_INT); return LIT_INT;  }
 [0-9]+\.[0-9]+              {hashInsert(yytext, LIT_REAL); return LIT_REAL;    }
 "\n"                        {LineNumber++;        }

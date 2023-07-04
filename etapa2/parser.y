@@ -1,6 +1,6 @@
 %{
 int yylex();
-iny yyerror();
+int yyerror();
 %}
 
 %token KW_CHAR           
@@ -32,11 +32,10 @@ iny yyerror();
 
 %token TOKEN_ERROR      
 
-%left OPERATOR_LE OPERATOR_GE OPERATOR_EQ OPERATOR_DIF
-%left '<' '>'
+%left OPERATOR_LE OPERATOR_GE OPERATOR_EQ OPERATOR_DIF '<' '>' '&' '|' '~'
 %left '+' '-'
 %left '*' '/'
-%left '&' '|' '~'
+
 
 %%
 
@@ -68,15 +67,18 @@ literal:
     ;
 
 init_v:
-    | literal init_v
+    literal init_v
+    |
     ;   
 
 paraml:
-    | param nextParam
+    param nextParam
+    |
     ;
 
 nextParam:
-    | ',' param nextParam
+    ',' param nextParam
+    |
     ;
 
 param:
@@ -89,10 +91,12 @@ block:
 
 seq_command:
     command seq_command_end
+    |
     ;
 
 seq_command_end:
-    | command seq_command_end
+    command seq_command_end
+    |
     ;
 
 command:
@@ -102,7 +106,9 @@ command:
     | TK_IDENTIFIER '[' expr ']' '=' expr ';'
     | KW_OUTPUT outputl ';'
     | KW_RETURN expr ';'
-    | KW_IF '(' expr ')' ifCases ';'
+    | KW_IF '(' expr ')' command
+    | KW_IF '(' expr ')' command KW_ELSE command
+    | KW_IF '(' expr ')' KW_LOOP command
     ;
 
 outputl:
@@ -110,7 +116,8 @@ outputl:
     ;
 
 nextOutput:
-    | ',' output nextOutput
+    ',' output nextOutput
+    |
     ;
 
 output:
@@ -118,36 +125,26 @@ output:
     | expr
     ;
 
-ifCases:
-    command
-    | command KW_ELSE command
-    | KW_LOOP command
-    ;
-
 expr:
     TK_IDENTIFIER
     | TK_IDENTIFIER '[' expr ']'
     | literal
-    | expr op expr
+    | expr '+' expr
+    | expr '-' expr
+    | expr '*' expr
+    | expr '/' expr
+    | expr '<' expr
+    | expr '>' expr
+    | expr OPERATOR_DIF expr
+    | expr OPERATOR_EQ expr
+    | expr OPERATOR_GE expr
+    | expr OPERATOR_LE expr
+    | expr '&' expr
+    | expr '|' expr
+    | expr '~' expr
     | '(' expr ')'
     | TK_IDENTIFIER '(' argl ')'
     | KW_INPUT '(' type ')'
-    ;
-
-op:
-    '+'
-    | '-'
-    | '*'
-    | '/'
-    | '<'
-    | '>'
-    | OPERATOR_DIF
-    | OPERATOR_EQ
-    | OPERATOR_GE
-    | OPERATOR_LE
-    | '&'
-    | '|'
-    | '~'
     ;
 
 argl:
@@ -155,7 +152,8 @@ argl:
     ;
 
 nextArg:
-    | ',' expr nextArg
+    ',' expr nextArg
+    |
     ;
 
 %%

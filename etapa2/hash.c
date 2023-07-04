@@ -1,5 +1,4 @@
-// Referência:
-// Código majoritariamente retirado das video aulas
+// Código inspirado naquele apresentado nas video aulas
 //      da disciplina INF01147 da UFRGS,
 //      do Professor Marcelo Johann
 
@@ -40,7 +39,6 @@ HASH_NODE *hashFind(char *text)
     for (node = Table[address]; node; node = node->next)
         if (strcmp(node->text, text) == 0)
         {
-            fprintf(stderr, "\n   REPEATED:");
             return node;
         }
     return 0;
@@ -74,7 +72,7 @@ void hashPrint(void)
     {
         for (node = Table[i]; node; node = node->next)
         {
-            printf("%d:\t %s\n", i, node->text);
+            printf("Table: [ %d:\t] Type: %d\t Token: %s\n", i, node->type, node->text);
         }
     }
 }
