@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "hash.h"
 #include "treeAST.h"
+#include "tacs.h"
 
 //lex.yy.h
 int yylex();
@@ -15,6 +16,7 @@ int yyparse();
 extern AST *getAST();
 extern int checkSemantic();
 extern int semanticErrors;
+extern TAC* getTACS();
 
 int main(int argc, char *argv[])
 {
@@ -48,7 +50,7 @@ int main(int argc, char *argv[])
   fprintf(stderr,"\n Starting Decompilation \n");
   decompileAST(getAST(),outputfile);
   fclose(outputfile);
-
+  //getTACS();
   //checkSemantic();
 
 

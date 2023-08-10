@@ -2,14 +2,18 @@
 
 int SemanticErrors = 0;
 AST *ROOT;
-
+bool etapa4 = false;
 int semanticVerification(AST *root)
 {
-    ROOT = root;
-    check_and_set_declaration(root);
-    check_undeclared();
-    check_operands(root);
-    return SemanticErrors;
+    if(etapa4){
+        ROOT = root;
+        check_and_set_declaration(root);
+        check_undeclared();
+        check_operands(root);    
+        return SemanticErrors;
+    }
+    else
+        return 0;
 }
 
 void check_and_set_declaration(AST *node)

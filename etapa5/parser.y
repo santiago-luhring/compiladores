@@ -79,7 +79,8 @@
 %%
 
 program:
-    decl                                                {root=$$;
+    decl                                                {$$ = $1;
+                                                        root=$$;
                                                         astPrint(0,root);
                                                         semanticErrors = semanticVerification(root);
                                                         tacPrintAll(generateCode(root));

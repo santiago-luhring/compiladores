@@ -4,7 +4,7 @@
 
 TAC* tacCreate(int type, HASH_NODE* res, HASH_NODE* op1, HASH_NODE* op2)
 {
-    TAC* tacCreate = 0;
+    TAC* tacCreate = NULL;
     tacCreate = (TAC*) calloc(1, sizeof(TAC));
     tacCreate->type = type;
     tacCreate->res = res;
@@ -88,9 +88,8 @@ void tacPrint(TAC* tac)
 }
 void tacPrintAll(TAC* tac)
 {
-    if(!tac)
-        return;
-    else{
+    if(!tac)return;
+	else{
         tacPrintAll(tac->prev);
         tacPrint(tac);
     }
@@ -98,51 +97,51 @@ void tacPrintAll(TAC* tac)
 
 TAC* generateCode(AST* node)
 {
-	if(!node) return NULL;
+	if(!node){
+		return NULL;
+	}
     TAC* result = 0;
 	TAC* child[MAX_CHILD];
 	
 	for(int i = 0; i < MAX_CHILD; i++)
 		child[i] = generateCode(node->child[i]);
-
 	switch(node->type){
-		case AST_SYMBOL: result = tacCreate(TAC_SYMBOL, node->symbol, 0, 0);break;
-        case AST_ADD: result = createBinop(TAC_ADD, child);break;    
-		case AST_SUB: result = createBinop(TAC_SUB, child);break;
-		case AST_MUL: result = createBinop(TAC_MUL, child);break;
-		case AST_DIV: result = createBinop(TAC_DIV, child);break;
-		case AST_GREATER: result = createBinop(TAC_GREATER, child);break;
-		case AST_LESSER: result = createBinop(TAC_LESSER, child);break;
-		case AST_EQUAL: result = createBinop(TAC_EQUAL, child);break;
-		case AST_GREATOP: result = createBinop(TAC_GREATOP, child);break;
-		case AST_LESSOP: result = createBinop(TAC_LESSOP, child);break;
-		case AST_DIF: result = createBinop(TAC_DIF, child);break;
-		case AST_AND: result = createBinop(TAC_AND, child);break;
-		case AST_OR: result = createBinop(TAC_OR, child);break;
-		case AST_NOT: result = createBinop(TAC_NOT, child);break;
+		case AST_SYMBOL: 	result = tacCreate(TAC_SYMBOL, node->symbol, 0, 0);break;
+        case AST_ADD: 		result = createBinop(TAC_ADD, child);break;    
+		case AST_SUB:		result = createBinop(TAC_SUB, child);break;
+		case AST_MUL:		result = createBinop(TAC_MUL, child);break;
+		case AST_DIV: 		result = createBinop(TAC_DIV, child);break;
+		case AST_GREATER: 	result = createBinop(TAC_GREATER, child);break;
+		case AST_LESSER: 	result = createBinop(TAC_LESSER, child);break;
+		case AST_EQUAL: 	result = createBinop(TAC_EQUAL, child);break;
+		case AST_GREATOP: 	result = createBinop(TAC_GREATOP, child);break;
+		case AST_LESSOP:	result = createBinop(TAC_LESSOP, child);break;
+		case AST_DIF: 		result = createBinop(TAC_DIF, child);break;
+		case AST_AND: 		result = createBinop(TAC_AND, child);break;
+		case AST_OR: 		result = createBinop(TAC_OR, child);break;
+		case AST_NOT: 		result = createBinop(TAC_NOT, child);break;
 
-        case AST_ATTRIB: result = tacJoin(child[0], tacCreate(TAC_COPY, node->symbol, child[0]?child[0]->res:0, 0));break;
-		case AST_VECATTR: result = 
-                    tacJoin(child[0], tacJoin(child[1], 
-                                      tacCreate(TAC_VECATTR, node->symbol, child[0]?child[0]->res:0, child[1]?child[1]->res:0)));break; 
-		case AST_INPUT: result = tacCreate(TAC_READ, node->symbol, 0, 0);break;
+        case AST_ATTRIB: 	result = tacJoin(child[0], tacCreate(TAC_COPY, node->symbol, child[0]?child[0]->res:0, 0));break;
+		case AST_VECATTR: 	result = tacJoin(child[0], tacJoin(child[1], tacCreate(TAC_VECATTR, node->symbol, child[0]?child[0]->res:0, child[1]?child[1]->res:0)));break; 
+		case AST_INPUT: 	result = tacCreate(TAC_READ, node->symbol, 0, 0);break;
 		case AST_PARAML:
-		case AST_NXTPRM: result = tacJoin(tacJoin(child[0], tacCreate(TAC_PRINT, child[0]?child[0]->res:0, 0, 0)), child[1]);break;
-		case AST_RETURN: result = tacJoin(child[0], tacCreate(TAC_RET, child[0]?child[0]->res:0, 0, 0));break;
+		case AST_NXTPRM: 	result = tacJoin(tacJoin(child[0], tacCreate(TAC_PRINT, child[0]?child[0]->res:0, 0, 0)), child[1]);break;
+		case AST_RETURN: 	result = tacJoin(child[0], tacCreate(TAC_RET, child[0]?child[0]->res:0, 0, 0));break;
 		case AST_IFELSE:
 		case AST_IF: 
         case AST_IFELWHILE: result = createIf(child); break;
 		
-		case AST_FUNC: result = tacJoin(child[0], tacCreate(TAC_CALL, makeTemp(), node->symbol, 0));break;
+		case AST_FUNC: 		result = tacJoin(child[0], tacCreate(TAC_CALL, makeTemp(), node->symbol, 0));break;
 		case AST_ARGL:
-		case AST_NEXTARG: result = tacJoin(child[1], tacJoin(child[0], tacCreate(TAC_ARGPUSH, child[0]?child[0]->res:0, 0, 0)));break;
-		case AST_VEC: result = tacJoin(child[0], tacCreate(TAC_VEC, makeTemp(), node->symbol, child[0]?child[0]->res:0));break;
+		case AST_NEXTARG: 	result = tacJoin(child[1], tacJoin(child[0], tacCreate(TAC_ARGPUSH, child[0]?child[0]->res:0, 0, 0)));break;
+		case AST_VEC: 		result = tacJoin(child[0], tacCreate(TAC_VEC, makeTemp(), node->symbol, child[0]?child[0]->res:0));break;
 
-		case AST_DECFUNC: result = createFunction(tacCreate(TAC_SYMBOL, node->symbol, 0, 0), child[1], child[2]);break;
-		case AST_PARAM: result = tacJoin(tacCreate(TAC_PARAMPOP, node->symbol, 0, 0), child[1]);break;       
+		case AST_DECFUNC: 	result = createFunction(tacCreate(TAC_SYMBOL, node->symbol, 0, 0), child[1], child[2]);break;
+		case AST_PARAM: 	result = tacJoin(tacCreate(TAC_PARAMPOP, node->symbol, 0, 0), child[1]);break;       
 
-        default: result = (tacJoin(tacJoin(child[0], child[1]), child[2]), child[3]);break;
+        default:			result = tacJoin(child[0],tacJoin(child[1],tacJoin(child[2], child[3])));break;
     }
+
     return result;
 }
 

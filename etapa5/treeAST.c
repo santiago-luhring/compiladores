@@ -25,8 +25,8 @@ void astPrint(int level, AST *node)
     int i = 0;
 
     for(i = 0; i < level; i++)
-        fprintf(stderr, "  ");
-    fprintf(stderr, "AST( ");
+        fprintf(stderr, " ");
+    fprintf(stderr, "AST(");
     switch (node->type)
     {
     case AST_DECL      :  fprintf(stderr,"AST_DECL"); break;
@@ -79,7 +79,7 @@ void astPrint(int level, AST *node)
     if(node->symbol != NULL)
         fprintf(stderr, ", %s )\n", node->symbol->text);
     else
-        fprintf(stderr, " )\n");
+        fprintf(stderr, ")\n");
 
     for(i=0; i < MAX_CHILD; i++)
         astPrint(level+1, node->child[i]);
