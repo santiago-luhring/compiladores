@@ -82,7 +82,7 @@ program:
     decl                                                {root=$$;
                                                         astPrint(0,root);
                                                         semanticErrors = semanticVerification(root);
-                                                        tacPrintall(generateCode(root));
+                                                        tacPrintAll(generateCode(root));
                                                         }  
     ;
 

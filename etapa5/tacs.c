@@ -108,31 +108,40 @@ TAC* generateCode(AST* node)
 	switch(node->type){
 		case AST_SYMBOL: result = tacCreate(TAC_SYMBOL, node->symbol, 0, 0);break;
         case AST_ADD: result = createBinop(TAC_ADD, child);break;    
-		case AST_SUB: result = createBinop(TAC_SUB, child);
-		case AST_MUL: result = createBinop(TAC_MUL, child);
-		case AST_DIV: result = createBinop(TAC_DIV, child);
-		case AST_GREATER: result = createBinop(TAC_GREATER, child);
-		case AST_LESSER: result = createBinop(TAC_LESSER, child);
-		case AST_EQUAL: result = createBinop(TAC_EQUAL, child);
-		case AST_GREATOP: result = createBinop(TAC_GREATOP, child);
-		case AST_LESSOP: result = createBinop(TAC_LESSOP, child);
-		case AST_DIF: result = createBinop(TAC_DIF, child);
-		case AST_AND: result = createBinop(TAC_AND, child);
-		case AST_OR: result = createBinop(TAC_OR, child);
-		case AST_NOT: result = createBinop(TAC_NOT, child);
+		case AST_SUB: result = createBinop(TAC_SUB, child);break;
+		case AST_MUL: result = createBinop(TAC_MUL, child);break;
+		case AST_DIV: result = createBinop(TAC_DIV, child);break;
+		case AST_GREATER: result = createBinop(TAC_GREATER, child);break;
+		case AST_LESSER: result = createBinop(TAC_LESSER, child);break;
+		case AST_EQUAL: result = createBinop(TAC_EQUAL, child);break;
+		case AST_GREATOP: result = createBinop(TAC_GREATOP, child);break;
+		case AST_LESSOP: result = createBinop(TAC_LESSOP, child);break;
+		case AST_DIF: result = createBinop(TAC_DIF, child);break;
+		case AST_AND: result = createBinop(TAC_AND, child);break;
+		case AST_OR: result = createBinop(TAC_OR, child);break;
+		case AST_NOT: result = createBinop(TAC_NOT, child);break;
 
-        case AST_ATTRIB: result = tacJoin(child[0], tacCreate(TAC_COPY, node->symbol, child[0]?child[0]->res:0, 0));
-		case AST_VECATTR: result = tacJoin(child[0], tacJoin(child[1], tacCreate(TAC_VECATTR, node->symbol, child[0]?child[0]->res:0, child[1]?child[1]->res:0))); 
-		case AST_INPUT: result = tacCreate(TAC_READ, node->symbol, 0, 0);
+        case AST_ATTRIB: result = tacJoin(child[0], tacCreate(TAC_COPY, node->symbol, child[0]?child[0]->res:0, 0));break;
+		case AST_VECATTR: result = 
+                    tacJoin(child[0], tacJoin(child[1], 
+                                      tacCreate(TAC_VECATTR, node->symbol, child[0]?child[0]->res:0, child[1]?child[1]->res:0)));break; 
+		case AST_INPUT: result = tacCreate(TAC_READ, node->symbol, 0, 0);break;
 		case AST_PARAML:
-		case AST_NXTPRM: result = tacJoin(tacJoin(child[0], tacCreate(TAC_PRINT, child[0]?child[0]->res:0, 0, 0)), child[1]);
-		case AST_RETURN: result = tacJoin(child[0], tacCreate(TAC_RET, child[0]?child[0]->res:0, 0, 0));
+		case AST_NXTPRM: result = tacJoin(tacJoin(child[0], tacCreate(TAC_PRINT, child[0]?child[0]->res:0, 0, 0)), child[1]);break;
+		case AST_RETURN: result = tacJoin(child[0], tacCreate(TAC_RET, child[0]?child[0]->res:0, 0, 0));break;
 		case AST_IFELSE:
 		case AST_IF: 
         case AST_IFELWHILE: result = createIf(child); break;
 		
+		case AST_FUNC: result = tacJoin(child[0], tacCreate(TAC_CALL, makeTemp(), node->symbol, 0));break;
+		case AST_ARGL:
+		case AST_NEXTARG: result = tacJoin(child[1], tacJoin(child[0], tacCreate(TAC_ARGPUSH, child[0]?child[0]->res:0, 0, 0)));break;
+		case AST_VEC: result = tacJoin(child[0], tacCreate(TAC_VEC, makeTemp(), node->symbol, child[0]?child[0]->res:0));break;
 
-        default: tacJoin(tacJoin(tacJoin(child[0], child[1]), child[2]), child[3]);break;
+		case AST_DECFUNC: result = createFunction(tacCreate(TAC_SYMBOL, node->symbol, 0, 0), child[1], child[2]);break;
+		case AST_PARAM: result = tacJoin(tacCreate(TAC_PARAMPOP, node->symbol, 0, 0), child[1]);break;       
+
+        default: result = (tacJoin(tacJoin(child[0], child[1]), child[2]), child[3]);break;
     }
     return result;
 }
@@ -161,4 +170,8 @@ TAC* createIf(TAC* child[])
     else{
 		return tacJoin(tacJoin(ifTac, child[1]), ifLabelTac);
 	}
+}
+
+TAC* createFunction(TAC* symbol, TAC* params, TAC* code){
+	return tacJoin(tacJoin(tacJoin(tacCreate(TAC_BEGINFUN, symbol->res, 0, 0), params), code), tacCreate(TAC_ENDFUN, symbol->res, 0, 0));
 }

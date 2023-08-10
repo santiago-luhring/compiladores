@@ -103,12 +103,12 @@ HASH_NODE* makeTemp(){
 	static int serialNumber = 0;
 	static char buffer[128];
 	sprintf(buffer, "_temp%d", serialNumber++);
-	return hashInsert(SYMBOL_IDENTIFIER, buffer);
+	return hashInsert(buffer, SYMBOL_IDENTIFIER);
 }
 
 HASH_NODE* makeLabel(){
 	static int serialNumber = 0;
 	static char buffer[128];
 	sprintf(buffer, "_label%d", serialNumber++);
-	return hashInsert(SYMBOL_IDENTIFIER, buffer);
+	return hashInsert(buffer, SYMBOL_LABEL);
 }
