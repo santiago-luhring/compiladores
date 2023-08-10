@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
   decompileAST(getAST(),outputfile);
   fclose(outputfile);
 
-  checkSemantic();
+  //checkSemantic();
 
 
   exit(0);

@@ -1,0 +1,164 @@
+#include "tacs.h"
+
+
+
+TAC* tacCreate(int type, HASH_NODE* res, HASH_NODE* op1, HASH_NODE* op2)
+{
+    TAC* tacCreate = 0;
+    tacCreate = (TAC*) calloc(1, sizeof(TAC));
+    tacCreate->type = type;
+    tacCreate->res = res;
+    tacCreate->op1 = op1;
+    tacCreate->op2 = op2;
+    tacCreate->next = NULL;
+    tacCreate->prev = NULL;
+
+    return tacCreate;
+}
+
+TAC* tacJoin(TAC* l1, TAC* l2)
+{
+    TAC* point;
+    if(!l1)return l2;
+    if(!l2)return l1;
+    point = l2;
+	while(point->prev){
+		point = point->prev;	
+	}
+	point->prev = l1;
+	return l2;
+}
+
+
+void tacPrint(TAC* tac)
+{
+	if(!tac) return;
+	if(tac->type == TAC_SYMBOL) return;
+	
+	fprintf(stderr, "TAC(");
+	switch(tac->type){
+		case TAC_COPY: fprintf(stderr, "MOVE(");break;
+		case TAC_ADD: fprintf(stderr, "ADD(");break;
+		case TAC_SUB: fprintf(stderr, "SUB(");break;
+		case TAC_MUL: fprintf(stderr, "MUL(");break;
+		case TAC_DIV: fprintf(stderr, "DIV(");break;
+		case TAC_GREATER: fprintf(stderr, "GREATER(");break;
+		case TAC_LESSER: fprintf(stderr, "LESSER(");break;
+		case TAC_GREATOP: fprintf(stderr, "GREATOP(");break;
+		case TAC_LESSOP: fprintf(stderr, "LESSOP(");break;
+		case TAC_EQUAL: fprintf(stderr, "EQUAL(");break;
+		case TAC_DIF: fprintf(stderr, "DIF(");break;
+		case TAC_AND: fprintf(stderr, "AND(");break;
+		case TAC_OR: fprintf(stderr, "OR(");break;
+		case TAC_NOT: fprintf(stderr, "NOT(");break;
+		case TAC_LABEL: fprintf(stderr, "LABEL(");break;
+		case TAC_BEGINFUN: fprintf(stderr, "BEGINFUN(");break;
+		case TAC_ARGPUSH: fprintf(stderr, "ARGPUSH(");break;
+		case TAC_ENDFUN: fprintf(stderr, "ENDFUN(");break;
+		case TAC_IFZ: fprintf(stderr, "IFZ(");break;
+		case TAC_JUMP: fprintf(stderr, "JUMP(");break;
+		case TAC_CALL: fprintf(stderr, "CALL(");break;
+		case TAC_ARG: fprintf(stderr, "ARG(");break;
+		case TAC_RET: fprintf(stderr, "RET(");break;
+		case TAC_PRINT: fprintf(stderr, "PRINT(");break;
+		case TAC_READ: fprintf(stderr, "READ(");break;
+		case TAC_VECATTR: fprintf(stderr, "VECATTR(");break;
+		case TAC_VEC: fprintf(stderr, "VEC(");break;
+		case TAC_PARAMPOP: fprintf(stderr, "PARAMPOP(");break;
+
+		default: fprintf(stderr, "UNKNOWN TAC TYPE!(");break;
+	}
+
+	if(tac->res)
+		fprintf(stderr, "%s, ", tac->res->text);
+	else
+		fprintf(stderr, "0, ");
+
+	if(tac->op1)
+		fprintf(stderr, "%s, ", tac->op1->text);
+	else
+		fprintf(stderr, "0, ");
+
+	if(tac->op2)
+		fprintf(stderr, "%s", tac->op2->text);
+	else
+		fprintf(stderr, "0");
+
+	fprintf(stderr, "))\n");
+}
+void tacPrintAll(TAC* tac)
+{
+    if(!tac)
+        return;
+    else{
+        tacPrintAll(tac->prev);
+        tacPrint(tac);
+    }
+}
+
+TAC* generateCode(AST* node)
+{
+	if(!node) return NULL;
+    TAC* result = 0;
+	TAC* child[MAX_CHILD];
+	
+	for(int i = 0; i < MAX_CHILD; i++)
+		child[i] = generateCode(node->child[i]);
+
+	switch(node->type){
+		case AST_SYMBOL: result = tacCreate(TAC_SYMBOL, node->symbol, 0, 0);break;
+        case AST_ADD: result = createBinop(TAC_ADD, child);break;    
+		case AST_SUB: result = createBinop(TAC_SUB, child);
+		case AST_MUL: result = createBinop(TAC_MUL, child);
+		case AST_DIV: result = createBinop(TAC_DIV, child);
+		case AST_GREATER: result = createBinop(TAC_GREATER, child);
+		case AST_LESSER: result = createBinop(TAC_LESSER, child);
+		case AST_EQUAL: result = createBinop(TAC_EQUAL, child);
+		case AST_GREATOP: result = createBinop(TAC_GREATOP, child);
+		case AST_LESSOP: result = createBinop(TAC_LESSOP, child);
+		case AST_DIF: result = createBinop(TAC_DIF, child);
+		case AST_AND: result = createBinop(TAC_AND, child);
+		case AST_OR: result = createBinop(TAC_OR, child);
+		case AST_NOT: result = createBinop(TAC_NOT, child);
+
+        case AST_ATTRIB: result = tacJoin(child[0], tacCreate(TAC_COPY, node->symbol, child[0]?child[0]->res:0, 0));
+		case AST_VECATTR: result = tacJoin(child[0], tacJoin(child[1], tacCreate(TAC_VECATTR, node->symbol, child[0]?child[0]->res:0, child[1]?child[1]->res:0))); 
+		case AST_INPUT: result = tacCreate(TAC_READ, node->symbol, 0, 0);
+		case AST_PARAML:
+		case AST_NXTPRM: result = tacJoin(tacJoin(child[0], tacCreate(TAC_PRINT, child[0]?child[0]->res:0, 0, 0)), child[1]);
+		case AST_RETURN: result = tacJoin(child[0], tacCreate(TAC_RET, child[0]?child[0]->res:0, 0, 0));
+		case AST_IFELSE:
+		case AST_IF: 
+        case AST_IFELWHILE: result = createIf(child); break;
+		
+
+        default: tacJoin(tacJoin(tacJoin(child[0], child[1]), child[2]), child[3]);break;
+    }
+    return result;
+}
+
+TAC* createBinop(int type, TAC* child[])
+{
+	HASH_NODE * op1;
+	HASH_NODE * op2;
+	if(child[0]) op1 = child[0]->res; else op1 = 0;
+	if(child[1]) op2 = child[1]->res; else op2 = 0;
+	return tacJoin(child[0], tacJoin(child[1], tacCreate(type, makeTemp(), op1, op2)));
+}
+TAC* createIf(TAC* child[])
+{
+	HASH_NODE* ifLabel = makeLabel();
+	TAC* ifTac = tacJoin(child[0], tacCreate(TAC_IFZ, ifLabel, child[0]?child[0]->res:0, 0));
+	TAC* ifLabelTac = tacCreate(TAC_LABEL, ifLabel, 0, 0);
+	
+	if(child[2]){
+		HASH_NODE* elseLabel = makeLabel();
+		TAC* elseLabelTac = tacCreate(TAC_LABEL, elseLabel, 0, 0);
+		TAC* elseJumpTac = tacCreate(TAC_JUMP, elseLabel, 0, 0);
+		TAC* ifElseTac = tacJoin(tacJoin(tacJoin(tacJoin(tacJoin(ifTac, child[1]), elseJumpTac), ifLabelTac), child[2]), elseLabelTac);
+		return ifElseTac;
+	}
+    else{
+		return tacJoin(tacJoin(ifTac, child[1]), ifLabelTac);
+	}
+}

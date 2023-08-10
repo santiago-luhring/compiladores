@@ -2,6 +2,7 @@
     #include "hash.h"
     #include "treeAST.h"
     #include "semantic.h"
+    #include "tacs.h"
     int getLineNumber();
     int semanticErrors;
 
@@ -81,6 +82,7 @@ program:
     decl                                                {root=$$;
                                                         astPrint(0,root);
                                                         semanticErrors = semanticVerification(root);
+                                                        tacPrintall(generateCode(root));
                                                         }  
     ;
 
