@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "stdlib.h": "c",
-        "treeAST.C": "cpp"
+        "treeAST.C": "cpp",
+        "function_hash.h": "c"
     }
 }

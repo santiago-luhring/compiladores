@@ -1,13 +1,15 @@
 %{
     #include "hash.h"
+
     #include "treeAST.h"
     #include "semantic.h"
     #include "tacs.h"
-    #include "asm.h"
+
     int getLineNumber();
     int semanticErrors;
 
     AST* root;
+    TAC *TACs;
 %}
 
 %union{
@@ -87,8 +89,8 @@ program:
                                                         semanticErrors = semanticVerification(root);
                                                         code = generateCode(root);
                                                         tacPrintAll(code);
-                                                        code = tacsReverse(code);
-                                                        generateASM(code);
+                                                        TACs = tacsReverse(code);
+                                                        
                                                         }  
     ;
 
@@ -223,6 +225,9 @@ int yyerror()
 AST* getAST()
 {
 	return root;
+}
+TAC* getTACs(){
+  return TACs;
 }
 
 void checkSemantic()

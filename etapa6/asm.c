@@ -4,6 +4,8 @@
 #include "semantic.h"
 #include "treeAST.h"
 #include "hash.h"
+#include "function_hash.h"
+
 
 void addTemporaries(FILE* out){
     HASH_NODE** Table = getTable();
@@ -16,7 +18,7 @@ void addTemporaries(FILE* out){
                              "\t.type	_%s, @object\n"
                              "\t.size	_%s, 4\n"
                              "_%s:\n", aux->text, aux->text, aux->text, aux->text);
-                if(aux->datatype == DATATYPE_REAL){
+                if(aux->datatype == DATATYPE_FLOAT){
                     fprintf(out, "\t.float  0.0\n");
                 }
                 else{
@@ -32,22 +34,21 @@ void addImmediates(FILE* out){
 
 	for(int i = 0; i < HASH_SIZE; i++) {	
 		for(HASH_NODE *aux = Table[i]; aux; aux = aux->next){
-			if((aux->type == SYMBOL_LIT_INT || aux->type == SYMBOL_LIT_REAL) || aux->type == SYMBOL_LIT_CHAR) { 
+			if((aux->type == SYMBOL_LIT_INT || aux->type == SYMBOL_LIT_FLOAT) || aux->type == SYMBOL_LIT_CHAR) { 
                 fprintf(out, "\t.globl	_%s\n"
                              "\t.data\n"
                              "\t.type	_%s, @object\n"
                              "\t.size	_%s, 4\n"
                              "_%s:\n", aux->text, aux->text, aux->text, aux->text);
 
-                if(aux->type == SYMBOL_LIT_REAL) {
+                if(aux->type == SYMBOL_LIT_FLOAT) {
                     fprintf(out, "\t.float  %s\n", aux->text);
                 }
                 else if(aux->type == SYMBOL_LIT_INT){
                     fprintf(out, "\t.long   %s\n", aux->text);
-
                 }
                 else if(aux->type == SYMBOL_LIT_CHAR){
-                    fprintf(out, "\t.long   %d\n", aux->text[1]);
+                    fprintf(out, "\t.long   %d\n", aux->text[1]);  // 'x' will print ascii of x only
                 }
 			}
 		}
@@ -63,9 +64,8 @@ void addData(FILE *out, AST* node){
                      "\t.data\n"
                      "\t.type	_%s, @object\n"
                      "\t.size	_%s, 4\n"
-                     "_%s:\n", node->symbol->text, node->symbol->text, node->symbol->text, node->symbol->text
-                );
-		
+                     "_%s:\n", node->symbol->text, node->symbol->text, node->symbol->text, node->symbol->text);
+
 		if(node->child[0]->type == AST_TREAL) {
 			fprintf(out, "\t.float	%s\n", node->child[1]->symbol->text);
 		}
@@ -78,8 +78,7 @@ void addData(FILE *out, AST* node){
                      "\t.data\n"
                      "\t.type	_%s, @object\n"
                      "\t.size	_%s, 4\n"
-                     "_%s:\n", node->symbol->text, node->symbol->text, node->symbol->text, node->symbol->text
-                );
+                     "_%s:\n", node->symbol->text, node->symbol->text, node->symbol->text, node->symbol->text);
         if(node->child[0]->type == AST_TREAL) {
 			fprintf(out, "\t.float	0\n");
 		}
@@ -92,8 +91,8 @@ void addData(FILE *out, AST* node){
                      "\t.data\n"
                      "\t.type	_%s, @object\n"
                      "\t.size	_%s, %d\n"
-                     "_%s:\n", node->symbol->text, node->symbol->text, node->symbol->text, 4*atoi(node->child[1]->symbol->text), node->symbol->text
-                );
+                     "_%s:\n", node->symbol->text, node->symbol->text, node->symbol->text, 4*atoi(node->child[1]->symbol->text), node->symbol->text);
+        
         for(AST* aux = node->child[2]; aux; aux = aux->child[1]) {
             if(node->child[0]->type == AST_TREAL){
                 fprintf(out, "\t.float	%s\n", aux->child[0]->symbol->text);
@@ -101,6 +100,7 @@ void addData(FILE *out, AST* node){
             else{
                 fprintf(out, "\t.long	%s\n", aux->child[0]->symbol->text);
             }
+
         }
 	}
     else if(node->type == AST_SYMBOL){
@@ -116,6 +116,14 @@ void addData(FILE *out, AST* node){
 }
 
 void asmGenerate(TAC *firstTac, AST* ast){
+
+    function_hashInit();
+    char * function_name = NULL;
+    int arg_index = 0;
+    function_hash_node * node = NULL;
+    function_argument * argument = NULL;
+    char * argumentBuffer[100];
+
 
     FILE* out = fopen("out.s", "w");
     int LC = 2;
@@ -315,7 +323,7 @@ void asmGenerate(TAC *firstTac, AST* ast){
                                     "\tmovl	$0, %%eax\n"
                                     "\tcall	printf@PLT\n", LC++);
                 }
-                else if(tac->res->datatype == DATATYPE_REAL) {
+                else if(tac->res->datatype == DATATYPE_FLOAT) {
                     fprintf(out,  "\tmovss	_%s(%%rip), %%xmm0\n"
                                   "\tcvtss2sd	%%xmm0, %%xmm0\n"
                                   "\tleaq	.LC1(%%rip), %%rdi\n"
@@ -332,6 +340,10 @@ void asmGenerate(TAC *firstTac, AST* ast){
                 break;
 
             case TAC_BEGINFUN:
+                function_hashInsert(tac->res->text);
+                if(function_name != NULL) free(function_name);
+                function_name = (char*) calloc(1, sizeof(tac->res->text));
+                strcpy(function_name, tac->res->text);
                 fprintf(out, "\t.text\n"
 						     "\t.globl %s\n"
 						     "\t.type	%s, @function\n"
@@ -339,6 +351,13 @@ void asmGenerate(TAC *firstTac, AST* ast){
 						     "\tpushq	%%rbp\n"
 						     "\tmovq	%%rsp, %%rbp\n",  tac->res->text, tac->res->text, tac->res->text);
                 break;
+
+        case TAC_ARGPUSH:
+
+          argumentBuffer[arg_index] = (char*) calloc(1, sizeof(tac->res->text));
+          strcpy(argumentBuffer[arg_index], tac->res->text);
+          arg_index++;
+          break;
 
         case TAC_VEC:
           fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
@@ -360,9 +379,17 @@ void asmGenerate(TAC *firstTac, AST* ast){
                 break;
 
             case TAC_CALL:
+              if(function_name != NULL) free(function_name);
+              function_name = (char*) calloc(1, sizeof(tac->op1->text));
+              strcpy(function_name, tac->op1->text);
+              function_argument * arg = getNode(function_name)->first_argument;
+              for(int i = arg_index - 1; i >= 0 && arg != NULL; i--, arg = arg->next){
+              fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+                        "\tmovl %%eax, _%s(%%rip)\n", argumentBuffer[i], arg->name);
+              }
               fprintf(out, "\tcall	%s\n"
-				             "\tmovl	%%eax, _%s(%%rip)\n" , 
-                             tac->op1->text, tac->res->text);
+				             "\tmovl	%%eax, _%s(%%rip)\n" , tac->op1->text, tac->res->text);
+              arg_index = 0;
               break;
         case TAC_READ: fprintf(out, "\tmovl	$_%s, %%esi\n"
                                 "\tmovl	$.LC0, %%edi\n"

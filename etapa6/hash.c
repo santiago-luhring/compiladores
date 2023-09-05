@@ -112,3 +112,6 @@ HASH_NODE* makeLabel(){
 	sprintf(buffer, "_label%d", serialNumber++);
 	return hashInsert(buffer, SYMBOL_LABEL);
 }
+HASH_NODE** getTable(){
+    return Table;
+}

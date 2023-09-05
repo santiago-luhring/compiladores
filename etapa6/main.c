@@ -3,6 +3,7 @@
 #include "hash.h"
 #include "treeAST.h"
 #include "tacs.h"
+#include "asm.h"
 
 //lex.yy.h
 int yylex();
@@ -16,7 +17,7 @@ int yyparse();
 extern AST *getAST();
 extern int checkSemantic();
 extern int semanticErrors;
-extern TAC* getTACS();
+extern TAC* getTACs();
 
 int main(int argc, char *argv[])
 {
@@ -50,6 +51,7 @@ int main(int argc, char *argv[])
   fprintf(stderr,"\n Starting Decompilation \n");
   decompileAST(getAST(),outputfile);
   fclose(outputfile);
+  asmGenerate(getTACs(), getAST());
   //getTACS();
   //checkSemantic();
 

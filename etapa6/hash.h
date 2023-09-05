@@ -48,5 +48,6 @@ int hash_check_undeclared();
 
 HASH_NODE* makeTemp();
 HASH_NODE* makeLabel();
+HASH_NODE** getTable();
 
 #endif

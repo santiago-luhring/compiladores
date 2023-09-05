@@ -178,17 +178,6 @@ TAC* createIf(TAC* child[])
 	}
 }
 
-TAC* createLoop(TAC* child[], HASH_NODE *whileLabel){
-	HASH_NODE* jumpLabel = makeLabel();
-
-	TAC* whileTac = newTac(TAC_IFZ, jumpLabel, child[0]?child[0]->res:0, 0);
-	TAC* whileLabelTac = newTac(TAC_LABEL, whileLabel, 0, 0);
-	TAC* jumpTac = newTac(TAC_JUMP, whileLabel, 0, 0);
-	TAC* jumpLabelTac= newTac(TAC_LABEL, jumpLabel, 0, 0);
-
-	return tacJoin(tacJoin(tacJoin(tacJoin(tacJoin(whileLabelTac, child[0]), whileTac), child[1]), jumpTac), jumpLabelTac);
-}
-
 TAC* createFunction(TAC* symbol, TAC* params, TAC* code){
 	return tacJoin(tacJoin(tacJoin(tacCreate(TAC_BEGINFUN, symbol->res, 0, 0), params), code), tacCreate(TAC_ENDFUN, symbol->res, 0, 0));
 }
