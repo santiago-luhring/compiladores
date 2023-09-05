@@ -60,11 +60,11 @@ void tacPrint(TAC* tac)
 		case TAC_CALL: fprintf(stderr, "CALL(");break;
 		case TAC_ARG: fprintf(stderr, "ARG(");break;
 		case TAC_RET: fprintf(stderr, "RET(");break;
-		case TAC_PRINT: fprintf(stderr, "PRINT(");break;
-		case TAC_READ: fprintf(stderr, "READ(");break;
+		case TAC_PRINT: fprintf(stderr, "OUTPUT(");break;
+		case TAC_READ: fprintf(stderr, "INPUT(");break;
 		case TAC_VECATTR: fprintf(stderr, "VECATTR(");break;
 		case TAC_VEC: fprintf(stderr, "VEC(");break;
-		case TAC_PARAMPOP: fprintf(stderr, "PARAMPOP(");break;
+	
 
 		default: fprintf(stderr, "UNKNOWN TAC TYPE!(");break;
 	}
@@ -123,13 +123,13 @@ TAC* generateCode(AST* node)
 
         case AST_ATTRIB: 	result = tacJoin(child[0], tacCreate(TAC_COPY, node->symbol, child[0]?child[0]->res:0, 0));break;
 		case AST_VECATTR: 	result = tacJoin(child[0], tacJoin(child[1], tacCreate(TAC_VECATTR, node->symbol, child[0]?child[0]->res:0, child[1]?child[1]->res:0)));break; 
-		case AST_INPUT: 	result = tacCreate(TAC_READ, node->symbol, 0, 0);break;
-		case AST_PARAML:
-		case AST_NXTPRM: 	result = tacJoin(tacJoin(child[0], tacCreate(TAC_PRINT, child[0]?child[0]->res:0, 0, 0)), child[1]);break;
+		case AST_INPUT: 	result = tacCreate(TAC_READ, makeTemp(), 0, 0);break;
+		case AST_OUTPUTL:
+		case AST_NEXTOUT: 	result = tacJoin(tacJoin(child[0], tacCreate(TAC_PRINT, child[0]?child[0]->res:0, 0, 0)), child[1]);break;
 		case AST_RETURN: 	result = tacJoin(child[0], tacCreate(TAC_RET, child[0]?child[0]->res:0, 0, 0));break;
 		case AST_IFELSE:
-		case AST_IF: 
-        case AST_IFELWHILE: result = createIf(child); break;
+		case AST_IF: 		result = createIf(child); break;
+        case AST_IFELWHILE: break;
 		
 		case AST_FUNC: 		result = tacJoin(child[0], tacCreate(TAC_CALL, makeTemp(), node->symbol, 0));break;
 		case AST_ARGL:
@@ -137,7 +137,7 @@ TAC* generateCode(AST* node)
 		case AST_VEC: 		result = tacJoin(child[0], tacCreate(TAC_VEC, makeTemp(), node->symbol, child[0]?child[0]->res:0));break;
 
 		case AST_DECFUNC: 	result = createFunction(tacCreate(TAC_SYMBOL, node->symbol, 0, 0), child[1], child[2]);break;
-		case AST_PARAM: 	result = tacJoin(tacCreate(TAC_PARAMPOP, node->symbol, 0, 0), child[1]);break;       
+		       
 
         default:			result = tacJoin(child[0],tacJoin(child[1],tacJoin(child[2], child[3])));break;
     }
@@ -169,6 +169,17 @@ TAC* createIf(TAC* child[])
     else{
 		return tacJoin(tacJoin(ifTac, child[1]), ifLabelTac);
 	}
+}
+
+TAC* createLoop(TAC* child[], HASH_NODE *whileLabel){
+	HASH_NODE* jumpLabel = makeLabel();
+
+	TAC* whileTac = newTac(TAC_IFZ, jumpLabel, child[0]?child[0]->res:0, 0);
+	TAC* whileLabelTac = newTac(TAC_LABEL, whileLabel, 0, 0);
+	TAC* jumpTac = newTac(TAC_JUMP, whileLabel, 0, 0);
+	TAC* jumpLabelTac= newTac(TAC_LABEL, jumpLabel, 0, 0);
+
+	return tacJoin(tacJoin(tacJoin(tacJoin(tacJoin(whileLabelTac, child[0]), whileTac), child[1]), jumpTac), jumpLabelTac);
 }
 
 TAC* createFunction(TAC* symbol, TAC* params, TAC* code){
