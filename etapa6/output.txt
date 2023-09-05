@@ -17,6 +17,7 @@ output  "Digite um numero: \n" ;
 d = input (int );
 output  "Digite mais um numero: \n" ;
 if( i  <  10 )
+ loop
 {
 i =incn( i ,  1 );
 d =incn( d ,  d );

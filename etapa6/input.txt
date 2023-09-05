@@ -1,0 +1,12 @@
+
+
+int main ()
+{
+  a = 0;
+  b = 1;
+  c = 5;
+  v[c] = 55;
+  output v[5];
+  output c;
+  i = 2;
+}

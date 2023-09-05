@@ -1,0 +1,384 @@
+#include <stdio.h>
+#include <string.h>
+#include "asm.h"
+#include "semantic.h"
+#include "treeAST.h"
+#include "hash.h"
+
+void addTemporaries(FILE* out){
+    HASH_NODE** Table = getTable();
+
+    for(int i = 0; i < HASH_SIZE; i++) {	
+		for(HASH_NODE *aux = Table[i]; aux; aux = aux->next){
+			if(strncmp(aux->text, "_temp", 5) == 0) { 
+				fprintf(out, "\t.globl	_%s\n"
+                             "\t.data\n"
+                             "\t.type	_%s, @object\n"
+                             "\t.size	_%s, 4\n"
+                             "_%s:\n", aux->text, aux->text, aux->text, aux->text);
+                if(aux->datatype == DATATYPE_REAL){
+                    fprintf(out, "\t.float  0.0\n");
+                }
+                else{
+                    fprintf(out, "\t.long  0\n");
+                }
+			}
+		}
+	}
+}
+
+void addImmediates(FILE* out){
+    HASH_NODE** Table = getTable();
+
+	for(int i = 0; i < HASH_SIZE; i++) {	
+		for(HASH_NODE *aux = Table[i]; aux; aux = aux->next){
+			if((aux->type == SYMBOL_LIT_INT || aux->type == SYMBOL_LIT_REAL) || aux->type == SYMBOL_LIT_CHAR) { 
+                fprintf(out, "\t.globl	_%s\n"
+                             "\t.data\n"
+                             "\t.type	_%s, @object\n"
+                             "\t.size	_%s, 4\n"
+                             "_%s:\n", aux->text, aux->text, aux->text, aux->text);
+
+                if(aux->type == SYMBOL_LIT_REAL) {
+                    fprintf(out, "\t.float  %s\n", aux->text);
+                }
+                else if(aux->type == SYMBOL_LIT_INT){
+                    fprintf(out, "\t.long   %s\n", aux->text);
+
+                }
+                else if(aux->type == SYMBOL_LIT_CHAR){
+                    fprintf(out, "\t.long   %d\n", aux->text[1]);
+                }
+			}
+		}
+	}	
+}
+
+void addData(FILE *out, AST* node){
+    static int LC = 2;
+
+    if(!node) return;
+	if(node->type == AST_DECVAR) {   
+    	fprintf(out, "\t.globl	_%s\n"
+                     "\t.data\n"
+                     "\t.type	_%s, @object\n"
+                     "\t.size	_%s, 4\n"
+                     "_%s:\n", node->symbol->text, node->symbol->text, node->symbol->text, node->symbol->text
+                );
+		
+		if(node->child[0]->type == AST_TREAL) {
+			fprintf(out, "\t.float	%s\n", node->child[1]->symbol->text);
+		}
+		else {
+			fprintf(out, "\t.long	%s\n", node->child[1]->symbol->text);
+		}
+	}
+    else if (node->type == AST_PARAM){  // Params are global variables!
+    	fprintf(out, "\t.globl	_%s\n"
+                     "\t.data\n"
+                     "\t.type	_%s, @object\n"
+                     "\t.size	_%s, 4\n"
+                     "_%s:\n", node->symbol->text, node->symbol->text, node->symbol->text, node->symbol->text
+                );
+        if(node->child[0]->type == AST_TREAL) {
+			fprintf(out, "\t.float	0\n");
+		}
+		else {
+			fprintf(out, "\t.long	0\n");
+		}
+    }
+	else if(node->type == AST_DECVEC){
+        fprintf(out, "\t.globl	_%s\n"
+                     "\t.data\n"
+                     "\t.type	_%s, @object\n"
+                     "\t.size	_%s, %d\n"
+                     "_%s:\n", node->symbol->text, node->symbol->text, node->symbol->text, 4*atoi(node->child[1]->symbol->text), node->symbol->text
+                );
+        for(AST* aux = node->child[2]; aux; aux = aux->child[1]) {
+            if(node->child[0]->type == AST_TREAL){
+                fprintf(out, "\t.float	%s\n", aux->child[0]->symbol->text);
+            }
+            else{
+                fprintf(out, "\t.long	%s\n", aux->child[0]->symbol->text);
+            }
+        }
+	}
+    else if(node->type == AST_SYMBOL){
+        if(node->symbol->type == SYMBOL_LIT_STRING){
+            fprintf(out, "\t.section\t .rodata\n.LC%d:\n\t.string %s \n", LC, node->symbol->text);
+            LC++;          
+        }
+    }
+    
+	for(int i = 0; i < MAX_CHILD; i++){
+		addData(out, node->child[i]);
+	}
+}
+
+void asmGenerate(TAC *firstTac, AST* ast){
+
+    FILE* out = fopen("out.s", "w");
+    int LC = 2;
+    int BL = 0;
+
+    addTemporaries(out);
+    addImmediates(out);
+    fprintf(out, "\t.section	.rodata\n"
+		         ".LC0:\n"
+		         "\t.string	\"%%d\"\n");
+    fprintf(out, "\t.section	.rodata\n"
+                 ".LC1:\n"
+                 "\t.string	\"%%f\"\n");
+    addData(out, ast);
+
+    for(TAC* tac = firstTac; tac; tac = tac->next){
+				switch (tac->type) {
+            case TAC_COPY:
+              fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+                           "\tmovl %%eax, _%s(%%rip)\n", tac->op1->text, tac->res->text);
+              break;
+
+            case TAC_ADD:
+              fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+                           "\tmovl _%s(%%rip), %%edx\n"
+                           "\taddl %%eax, %%edx\n"
+                           "\tmovl %%edx, _%s(%%rip)\n", tac->op1->text, tac->op2->text, tac->res->text);
+              break;
+
+            case TAC_SUB:
+               fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+                            "\tmovl _%s(%%rip), %%edx\n"
+                            "\tsubl %%eax, %%edx\n"
+                            "\tmovl %%edx, _%s(%%rip)\n", tac->op2->text, tac->op1->text, tac->res->text);
+               break;
+
+            case TAC_MUL:
+               fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+                            "\tmovl _%s(%%rip), %%edx\n"
+                            "\timull %%eax, %%edx\n"
+                            "\tmovl %%edx, _%s(%%rip)\n", tac->op1->text, tac->op2->text, tac->res->text);
+               break;
+
+            case TAC_DIV:
+              fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+                           "\tmovl _%s(%%rip), %%ecx\n"
+                           "\tcltd\n"
+                           "\tidivl %%ecx\n"
+                           "\tmovl %%eax, _%s(%%rip)\n", tac->op1->text, tac->op2->text, tac->res->text);
+              break;
+
+            case TAC_GREATER:
+              fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+                      "\tmovl _%s(%%rip), %%edx\n"
+                      "\tcmpl %%eax, %%edx\n"
+                      "\tjg .BL%d\n"
+                      "\tmovl $0, %%eax\n"
+                      "\tjmp .BL%d\n"
+                      ".BL%d:\n"
+                      "\tmovl $1, %%eax\n"
+                      ".BL%d:\n"
+                      "\tmovl %%eax, _%s(%%rip)\n", tac->op2->text, tac->op1->text, BL, BL+1, BL, BL+1, tac->res->text);
+              BL+=2;
+              break;
+
+            case TAC_LESSER:
+              fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+                      "\tmovl _%s(%%rip), %%edx\n"
+                      "\tcmpl %%eax, %%edx\n"
+                      "\tjl .BL%d\n"
+                      "\tmovl $0, %%eax\n"
+                      "\tjmp .BL%d\n"
+                      ".BL%d:\n"
+                      "\tmovl $1, %%eax\n"
+                      ".BL%d:\n"
+                      "\tmovl %%eax, _%s(%%rip)\n", tac->op2->text, tac->op1->text, BL, BL+1, BL, BL+1, tac->res->text);
+              BL+=2;
+              break;
+
+            case TAC_GREATOP:
+              fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+                           "\tmovl _%s(%%rip), %%edx\n"
+                           "\tcmpl %%eax, %%edx\n"
+                           "\tjge .BL%d\n"
+                           "\tmovl $0, %%eax\n"
+                           "\tjmp .BL%d\n"
+                           ".BL%d:\n"
+                           "\tmovl $1, %%eax\n"
+                           ".BL%d:\n"
+                           "\tmovl %%eax, _%s(%%rip)\n", tac->op2->text, tac->op1->text, BL, BL+1, BL, BL+1, tac->res->text);
+              BL+=2;
+              break;
+
+            case TAC_LESSOP:
+              fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+                           "\tmovl _%s(%%rip), %%edx\n"
+                           "\tcmpl %%eax, %%edx\n"
+                           "\tjle .BL%d\n"
+                           "\tmovl $0, %%eax\n"
+                           "\tjmp .BL%d\n"
+                           ".BL%d:\n"
+                           "\tmovl $1, %%eax\n"
+                           ".BL%d:\n"
+                           "\tmovl %%eax, _%s(%%rip)\n", tac->op2->text, tac->op1->text, BL, BL+1, BL, BL+1, tac->res->text);
+                BL+=2;
+                break;
+
+            case TAC_EQUAL:
+              fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+                      "\tmovl _%s(%%rip), %%edx\n"
+                      "\tcmpl %%eax, %%edx\n"
+                      "\tje .BL%d\n"
+                      "\tmovl $0, %%eax\n"
+                      "\tjmp .BL%d\n"
+                      ".BL%d:\n"
+                      "\tmovl $1, %%eax\n"
+                      ".BL%d:\n"
+                      "\tmovl %%eax, _%s(%%rip)\n", tac->op2->text, tac->op1->text, BL, BL+1, BL, BL+1, tac->res->text);
+              BL+=2;
+              break;
+
+            case TAC_DIF:
+              fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+                      "\tmovl _%s(%%rip), %%edx\n"
+                      "\tcmpl %%eax, %%edx\n"
+                      "\tjne .BL%d\n"
+                      "\tmovl $0, %%eax\n"
+                      "\tjmp .BL%d\n"
+                      ".BL%d:\n"
+                      "\tmovl $1, %%eax\n"
+                      ".BL%d:\n"
+                      "\tmovl %%eax, _%s(%%rip)\n", tac->op2->text, tac->op1->text, BL, BL+1, BL, BL+1, tac->res->text);
+              BL+=2;
+              break;
+
+            case TAC_AND:
+                fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+                             "\tmovl _%s(%%rip), %%edx\n"
+                             "\tandl %%eax, %%edx\n"
+                             "\tjz .BL%d\n"
+                             "\tmovl $1, %%eax\n"
+                             "\tjmp .BL%d\n"
+                             ".BL%d:\n"
+                             "\tmovl $0, %%eax\n"
+                             ".BL%d:\n"
+                             "\tmovl %%eax, _%s(%%rip)\n", tac->op1->text, tac->op2->text, BL, BL+1, BL, BL+1, tac->res->text);
+                BL+=2;
+                break;
+
+            case TAC_OR:
+              fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+                      "\tmovl _%s(%%rip), %%edx\n"
+                      "\torl %%eax, %%edx\n"
+                      "\tjz .BL%d\n"
+                      "\tmovl $1, %%eax\n"
+                      "\tjmp .BL%d\n"
+                      ".BL%d:\n"
+                      "\tmovl $0, %%eax\n"
+                      ".BL%d:\n"
+                      "\tmovl %%eax, _%s(%%rip)\n", tac->op1->text, tac->op2->text, BL, BL+1, BL, BL+1, tac->res->text);
+              BL+=2;
+              break;
+
+            case TAC_NOT:
+              fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+                      "\tmovl $1, %%edx\n"
+                      "\tandl %%eax, %%edx\n"
+                      "\tjz .BL%d\n"
+                      "\tmovl $0, %%eax\n"
+                      "\tjmp .BL%d\n"
+                      ".BL%d:\n"
+                      "\tmovl $1, %%eax\n"
+                      ".BL%d:\n"
+                      "\tmovl %%eax, _%s(%%rip)\n", tac->op1->text, BL, BL+1, BL, BL+1, tac->res->text);
+              BL+=2;
+              break;
+
+
+            case TAC_LABEL:
+              fprintf(out, ".%s:\n", tac->res->text);
+              break;
+
+            case TAC_JUMP:
+              fprintf(out, "\tjmp .%s\n", tac->res->text);
+              break;
+
+            case TAC_IFZ:
+              fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+                     "\tmovl $1, %%edx\n"
+                     "\tandl %%eax, %%edx\n"
+                     "\tjz .%s\n", tac->op1->text, tac->res->text);
+             break;
+
+            case TAC_PRINT:
+                if(tac->res->text[0] == '\"'){
+                    fprintf(out, 	"\tleaq	.LC%d(%%rip), %%rdi\n"
+                                    "\tmovl	$0, %%eax\n"
+                                    "\tcall	printf@PLT\n", LC++);
+                }
+                else if(tac->res->datatype == DATATYPE_REAL) {
+                    fprintf(out,  "\tmovss	_%s(%%rip), %%xmm0\n"
+                                  "\tcvtss2sd	%%xmm0, %%xmm0\n"
+                                  "\tleaq	.LC1(%%rip), %%rdi\n"
+                                  "\tmovl	$1, %%eax\n"
+                                  "\tcall	printf@PLT\n", tac->res->text);
+                }
+                else{
+                    fprintf(out, 	"\tmovl	_%s(%%rip), %%eax\n"
+                                    "\tmovl	%%eax, %%esi\n"
+                                    "\tleaq	.LC0(%%rip), %%rdi\n"
+                                    "\tmovl	$0, %%eax\n"
+                                    "\tcall	printf@PLT\n", tac->res->text);
+                }
+                break;
+
+            case TAC_BEGINFUN:
+                fprintf(out, "\t.text\n"
+						     "\t.globl %s\n"
+						     "\t.type	%s, @function\n"
+						     "%s:\n"
+						     "\tpushq	%%rbp\n"
+						     "\tmovq	%%rsp, %%rbp\n",  tac->res->text, tac->res->text, tac->res->text);
+                break;
+
+        case TAC_VEC:
+          fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+                  "\tcltq\n"
+                  "\tmovl _%s(,%%rax, 4), %%eax\n"
+                  "\tmovl %%eax, _%s(%%rip)\n", tac->op2->text, tac->op1->text, tac->res->text);
+          break;
+
+        case TAC_VECATTR:
+          fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+                  "\tmovl _%s(%%rip), %%edx\n"
+                  "\tcltq\n"
+                  "\tmovl %%edx, _%s(,%%rax, 4)\n", tac->op1->text, tac->op2->text, tac->res->text);
+          break;
+
+		    case TAC_ENDFUN:
+                fprintf(out, "\tpopq	%%rbp\n"
+					         "\tret\n");
+                break;
+
+            case TAC_CALL:
+              fprintf(out, "\tcall	%s\n"
+				             "\tmovl	%%eax, _%s(%%rip)\n" , 
+                             tac->op1->text, tac->res->text);
+              break;
+        case TAC_READ: fprintf(out, "\tmovl	$_%s, %%esi\n"
+                                "\tmovl	$.LC0, %%edi\n"
+                                "\tcall	__isoc99_scanf\n", tac->res->text);
+            break;
+
+        case TAC_RET:
+                fprintf(out, "\tmovl	_%s(%%rip), %%eax\n"
+											 "\tpopq	%%rbp\n"					
+										"\tret\n", tac->res->text);
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    fclose(out);
+}

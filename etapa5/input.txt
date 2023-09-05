@@ -29,7 +29,7 @@ int main ()
   d = input(int);
   output "Digite mais um numero: \n";
 
-  if (i<10) loop
+  if (i<10)
     {
     i = incn(i,1);
     d = incn(d,d);
