@@ -9,7 +9,6 @@
 
 void addTemporaries(FILE* out){
     HASH_NODE** Table = getTable();
-
     for(int i = 0; i < HASH_SIZE; i++) {	
 		for(HASH_NODE *aux = Table[i]; aux; aux = aux->next){
 			if(strncmp(aux->text, "_temp", 5) == 0) { 
@@ -31,7 +30,6 @@ void addTemporaries(FILE* out){
 
 void addImmediates(FILE* out){
     HASH_NODE** Table = getTable();
-
 	for(int i = 0; i < HASH_SIZE; i++) {	
 		for(HASH_NODE *aux = Table[i]; aux; aux = aux->next){
 			if((aux->type == SYMBOL_LIT_INT || aux->type == SYMBOL_LIT_FLOAT) || aux->type == SYMBOL_LIT_CHAR) { 
@@ -40,7 +38,6 @@ void addImmediates(FILE* out){
                              "\t.type	_%s, @object\n"
                              "\t.size	_%s, 4\n"
                              "_%s:\n", aux->text, aux->text, aux->text, aux->text);
-
                 if(aux->type == SYMBOL_LIT_FLOAT) {
                     fprintf(out, "\t.float  %s\n", aux->text);
                 }
@@ -48,7 +45,7 @@ void addImmediates(FILE* out){
                     fprintf(out, "\t.long   %s\n", aux->text);
                 }
                 else if(aux->type == SYMBOL_LIT_CHAR){
-                    fprintf(out, "\t.long   %d\n", aux->text[1]);  // 'x' will print ascii of x only
+                    fprintf(out, "\t.long   %d\n", aux->text[1]);
                 }
 			}
 		}
@@ -73,19 +70,19 @@ void addData(FILE *out, AST* node){
 			fprintf(out, "\t.long	%s\n", node->child[1]->symbol->text);
 		}
 	}
-    else if (node->type == AST_PARAM){  // Params are global variables!
+  else if (node->type == AST_PARAM){  
     	fprintf(out, "\t.globl	_%s\n"
                      "\t.data\n"
                      "\t.type	_%s, @object\n"
                      "\t.size	_%s, 4\n"
                      "_%s:\n", node->symbol->text, node->symbol->text, node->symbol->text, node->symbol->text);
-        if(node->child[0]->type == AST_TREAL) {
+      if(node->child[0]->type == AST_TREAL) {
 			fprintf(out, "\t.float	0\n");
-		}
-		else {
+		  }
+		  else {
 			fprintf(out, "\t.long	0\n");
-		}
-    }
+		  }
+  }
 	else if(node->type == AST_DECVEC){
         fprintf(out, "\t.globl	_%s\n"
                      "\t.data\n"
@@ -138,37 +135,42 @@ void asmGenerate(TAC *firstTac, AST* ast){
                  ".LC1:\n"
                  "\t.string	\"%%f\"\n");
     addData(out, ast);
-
     for(TAC* tac = firstTac; tac; tac = tac->next){
+      fprintf(stderr,"%d\n",tac->type);
 				switch (tac->type) {
             case TAC_COPY:
-              fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+              fprintf(out,"\n   #--------------------------TAC_COPY\n"
+                           "\tmovl _%s(%%rip), %%eax\n"
                            "\tmovl %%eax, _%s(%%rip)\n", tac->op1->text, tac->res->text);
               break;
 
             case TAC_ADD:
-              fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+              fprintf(out, "\n   #--------------------------TAC_ADD\n"
+                            "\tmovl _%s(%%rip), %%eax\n"
                            "\tmovl _%s(%%rip), %%edx\n"
                            "\taddl %%eax, %%edx\n"
                            "\tmovl %%edx, _%s(%%rip)\n", tac->op1->text, tac->op2->text, tac->res->text);
               break;
 
             case TAC_SUB:
-               fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+               fprintf(out, "\n   #--------------------------TAC_SUB\n"
+                            "\tmovl _%s(%%rip), %%eax\n"
                             "\tmovl _%s(%%rip), %%edx\n"
                             "\tsubl %%eax, %%edx\n"
                             "\tmovl %%edx, _%s(%%rip)\n", tac->op2->text, tac->op1->text, tac->res->text);
                break;
 
             case TAC_MUL:
-               fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+               fprintf(out, "\n   #--------------------------TAC_MUL\n"
+                            "\tmovl _%s(%%rip), %%eax\n"
                             "\tmovl _%s(%%rip), %%edx\n"
                             "\timull %%eax, %%edx\n"
                             "\tmovl %%edx, _%s(%%rip)\n", tac->op1->text, tac->op2->text, tac->res->text);
                break;
 
             case TAC_DIV:
-              fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+              fprintf(out, "\n   #--------------------------TAC_DIV\n"
+                           "\tmovl _%s(%%rip), %%eax\n"
                            "\tmovl _%s(%%rip), %%ecx\n"
                            "\tcltd\n"
                            "\tidivl %%ecx\n"
@@ -176,35 +178,38 @@ void asmGenerate(TAC *firstTac, AST* ast){
               break;
 
             case TAC_GREATER:
-              fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
-                      "\tmovl _%s(%%rip), %%edx\n"
-                      "\tcmpl %%eax, %%edx\n"
-                      "\tjg .BL%d\n"
-                      "\tmovl $0, %%eax\n"
-                      "\tjmp .BL%d\n"
-                      ".BL%d:\n"
-                      "\tmovl $1, %%eax\n"
-                      ".BL%d:\n"
-                      "\tmovl %%eax, _%s(%%rip)\n", tac->op2->text, tac->op1->text, BL, BL+1, BL, BL+1, tac->res->text);
+              fprintf(out, "\n   #--------------------------TAC_GREATER\n"
+                          "\tmovl _%s(%%rip), %%eax\n"
+                          "\tmovl _%s(%%rip), %%edx\n"
+                          "\tcmpl %%eax, %%edx\n"
+                          "\tjg .BL%d\n"
+                          "\tmovl $0, %%eax\n"
+                          "\tjmp .BL%d\n"
+                          ".BL%d:\n"
+                          "\tmovl $1, %%eax\n"
+                          ".BL%d:\n"
+                          "\tmovl %%eax, _%s(%%rip)\n", tac->op2->text, tac->op1->text, BL, BL+1, BL, BL+1, tac->res->text);
               BL+=2;
               break;
 
             case TAC_LESSER:
-              fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
-                      "\tmovl _%s(%%rip), %%edx\n"
-                      "\tcmpl %%eax, %%edx\n"
-                      "\tjl .BL%d\n"
-                      "\tmovl $0, %%eax\n"
-                      "\tjmp .BL%d\n"
-                      ".BL%d:\n"
-                      "\tmovl $1, %%eax\n"
-                      ".BL%d:\n"
-                      "\tmovl %%eax, _%s(%%rip)\n", tac->op2->text, tac->op1->text, BL, BL+1, BL, BL+1, tac->res->text);
+              fprintf(out, "\n   #--------------------------TAC_LESSER\n"
+                            "\tmovl _%s(%%rip), %%eax\n"
+                            "\tmovl _%s(%%rip), %%edx\n"
+                            "\tcmpl %%eax, %%edx\n"
+                            "\tjl .BL%d\n"
+                            "\tmovl $0, %%eax\n"
+                            "\tjmp .BL%d\n"
+                            ".BL%d:\n"
+                            "\tmovl $1, %%eax\n"
+                            ".BL%d:\n"
+                            "\tmovl %%eax, _%s(%%rip)\n", tac->op2->text, tac->op1->text, BL, BL+1, BL, BL+1, tac->res->text);
               BL+=2;
               break;
 
             case TAC_GREATOP:
-              fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+              fprintf(out, "\n   #--------------------------TAC_GREATOP\n"
+                            "\tmovl _%s(%%rip), %%eax\n"
                            "\tmovl _%s(%%rip), %%edx\n"
                            "\tcmpl %%eax, %%edx\n"
                            "\tjge .BL%d\n"
@@ -218,7 +223,8 @@ void asmGenerate(TAC *firstTac, AST* ast){
               break;
 
             case TAC_LESSOP:
-              fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+              fprintf(out, "\n   #--------------------------TAC_LESSOP\n"
+                            "\tmovl _%s(%%rip), %%eax\n"
                            "\tmovl _%s(%%rip), %%edx\n"
                            "\tcmpl %%eax, %%edx\n"
                            "\tjle .BL%d\n"
@@ -232,7 +238,8 @@ void asmGenerate(TAC *firstTac, AST* ast){
                 break;
 
             case TAC_EQUAL:
-              fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+              fprintf(out,"\n   #--------------------------TAC_EQUAL\n" 
+                          "\tmovl _%s(%%rip), %%eax\n"
                       "\tmovl _%s(%%rip), %%edx\n"
                       "\tcmpl %%eax, %%edx\n"
                       "\tje .BL%d\n"
@@ -246,7 +253,8 @@ void asmGenerate(TAC *firstTac, AST* ast){
               break;
 
             case TAC_DIF:
-              fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+              fprintf(out,"\n   #--------------------------TAC_DIF\n" 
+                    "\tmovl _%s(%%rip), %%eax\n"
                       "\tmovl _%s(%%rip), %%edx\n"
                       "\tcmpl %%eax, %%edx\n"
                       "\tjne .BL%d\n"
@@ -260,7 +268,8 @@ void asmGenerate(TAC *firstTac, AST* ast){
               break;
 
             case TAC_AND:
-                fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+                fprintf(out,"\n   #--------------------------TAC_AND\n" 
+                            "\tmovl _%s(%%rip), %%eax\n"
                              "\tmovl _%s(%%rip), %%edx\n"
                              "\tandl %%eax, %%edx\n"
                              "\tjz .BL%d\n"
@@ -274,7 +283,8 @@ void asmGenerate(TAC *firstTac, AST* ast){
                 break;
 
             case TAC_OR:
-              fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+              fprintf(out, "\n   #--------------------------TAC_OR\n" 
+                        "\tmovl _%s(%%rip), %%eax\n"
                       "\tmovl _%s(%%rip), %%edx\n"
                       "\torl %%eax, %%edx\n"
                       "\tjz .BL%d\n"
@@ -288,7 +298,8 @@ void asmGenerate(TAC *firstTac, AST* ast){
               break;
 
             case TAC_NOT:
-              fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+              fprintf(out,"\n   #--------------------------TAC_NOT\n" 
+                      "\tmovl _%s(%%rip), %%eax\n"
                       "\tmovl $1, %%edx\n"
                       "\tandl %%eax, %%edx\n"
                       "\tjz .BL%d\n"
@@ -303,21 +314,25 @@ void asmGenerate(TAC *firstTac, AST* ast){
 
 
             case TAC_LABEL:
-              fprintf(out, ".%s:\n", tac->res->text);
+              fprintf(out,"\n   #--------------------------TAC_LABEL\n"  
+                          ".%s:\n", tac->res->text);
               break;
 
             case TAC_JUMP:
-              fprintf(out, "\tjmp .%s\n", tac->res->text);
+              fprintf(out,"\n   #--------------------------TAC_JUMP\n" 
+                         "\tjmp .%s\n", tac->res->text);
               break;
 
             case TAC_IFZ:
-              fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+              fprintf(out,"\n   #--------------------------TAC_IFZ\n"  
+                      "\tmovl _%s(%%rip), %%eax\n"
                      "\tmovl $1, %%edx\n"
                      "\tandl %%eax, %%edx\n"
                      "\tjz .%s\n", tac->op1->text, tac->res->text);
              break;
 
             case TAC_PRINT:
+                fprintf(out,"\n   #--------------------------TAC_PRINT\n" );
                 if(tac->res->text[0] == '\"'){
                     fprintf(out, 	"\tleaq	.LC%d(%%rip), %%rdi\n"
                                     "\tmovl	$0, %%eax\n"
@@ -344,7 +359,8 @@ void asmGenerate(TAC *firstTac, AST* ast){
                 if(function_name != NULL) free(function_name);
                 function_name = (char*) calloc(1, sizeof(tac->res->text));
                 strcpy(function_name, tac->res->text);
-                fprintf(out, "\t.text\n"
+                fprintf(out,"\n   #--------------------------TAC_BEGINFUN\n"  
+                "\t.text\n"
 						     "\t.globl %s\n"
 						     "\t.type	%s, @function\n"
 						     "%s:\n"
@@ -360,28 +376,33 @@ void asmGenerate(TAC *firstTac, AST* ast){
           break;
 
         case TAC_VEC:
-          fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+          fprintf(out,"\n   #--------------------------TAC_VEC\n"  
+                  "\tmovl _%s(%%rip), %%eax\n"
                   "\tcltq\n"
                   "\tmovl _%s(,%%rax, 4), %%eax\n"
                   "\tmovl %%eax, _%s(%%rip)\n", tac->op2->text, tac->op1->text, tac->res->text);
           break;
 
         case TAC_VECATTR:
-          fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
+          fprintf(out,"\n   #--------------------------TAC_VECATTR\n"  
+                  "\tmovl _%s(%%rip), %%eax\n"
                   "\tmovl _%s(%%rip), %%edx\n"
                   "\tcltq\n"
                   "\tmovl %%edx, _%s(,%%rax, 4)\n", tac->op1->text, tac->op2->text, tac->res->text);
           break;
 
 		    case TAC_ENDFUN:
-                fprintf(out, "\tpopq	%%rbp\n"
+                fprintf(out,"\n   #--------------------------TAC_ENDFUN\n" 
+                   "\tpopq	%%rbp\n"
 					         "\tret\n");
                 break;
 
             case TAC_CALL:
+              fprintf(out,"\n   #--------------------------TAC_CALL\n"); 
               if(function_name != NULL) free(function_name);
               function_name = (char*) calloc(1, sizeof(tac->op1->text));
               strcpy(function_name, tac->op1->text);
+              fprintf(stderr,"%s\n",function_name ); 
               function_argument * arg = getNode(function_name)->first_argument;
               for(int i = arg_index - 1; i >= 0 && arg != NULL; i--, arg = arg->next){
               fprintf(out, "\tmovl _%s(%%rip), %%eax\n"
@@ -391,13 +412,14 @@ void asmGenerate(TAC *firstTac, AST* ast){
 				             "\tmovl	%%eax, _%s(%%rip)\n" , tac->op1->text, tac->res->text);
               arg_index = 0;
               break;
-        case TAC_READ: fprintf(out, "\tmovl	$_%s, %%esi\n"
+        case TAC_READ: fprintf(out, "\n   #--------------------------TAC_READ\n" 
+                                "\tmovl	$_%s, %%esi\n"
                                 "\tmovl	$.LC0, %%edi\n"
                                 "\tcall	__isoc99_scanf\n", tac->res->text);
             break;
-
         case TAC_RET:
-                fprintf(out, "\tmovl	_%s(%%rip), %%eax\n"
+                fprintf(out,"\n   #--------------------------TAC_RET\n" 
+                        "\tmovl	_%s(%%rip), %%eax\n"
 											 "\tpopq	%%rbp\n"					
 										"\tret\n", tac->res->text);
                 break;

@@ -99,11 +99,15 @@ int hash_check_undeclared(void)
 	return undeclaredVariables;
 }
 
-HASH_NODE* makeTemp(){
+HASH_NODE* makeTemp(int datatype){
 	static int serialNumber = 0;
-	static char buffer[128];
+	static char buffer[256];
 	sprintf(buffer, "_temp%d", serialNumber++);
-	return hashInsert(buffer, SYMBOL_IDENTIFIER);
+    HASH_NODE *node = hashInsert(buffer, SYMBOL_VAR);  
+    if(datatype){
+        node->datatype = datatype;
+    }
+	return node;
 }
 
 HASH_NODE* makeLabel(){

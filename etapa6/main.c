@@ -51,7 +51,10 @@ int main(int argc, char *argv[])
   fprintf(stderr,"\n Starting Decompilation \n");
   decompileAST(getAST(),outputfile);
   fclose(outputfile);
+  fprintf(stderr, "\n Decompilation successful.\n");
+  fprintf(stderr,"\n Generating ASM... \n");
   asmGenerate(getTACs(), getAST());
+  fprintf(stderr, "\n ASM generated successfully.\n");
   //getTACS();
   //checkSemantic();
 

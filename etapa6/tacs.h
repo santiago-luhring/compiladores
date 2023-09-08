@@ -47,7 +47,7 @@ typedef struct tac_struct{
 
 TAC* tacCreate(int type, HASH_NODE* res, HASH_NODE* op1, HASH_NODE* op2);
 TAC* tacJoin(TAC* l1, TAC* l2);
-TAC* createBinop(int type, TAC* child[]);
+TAC* createBinop(int type, TAC* child[], int datatype);
 TAC* createIf(TAC* child[]);
 TAC* createFunction(TAC* symbol, TAC* params, TAC* code);
 

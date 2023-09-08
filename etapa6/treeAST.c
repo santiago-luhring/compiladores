@@ -88,10 +88,8 @@ void astPrint(int level, AST *node)
 }
 
 void decompileAST(AST *node, FILE *file){
-
     if(node == NULL)
         return;
-
     switch (node->type)
     {
         case AST_DECL      :

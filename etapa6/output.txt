@@ -1,9 +1,11 @@
+int a =  0 ;
+int b =  2 ;
+int c =  6 ;
+int i =  10 ;
 int  main(){
-a = 0 ;
-b = 1 ;
-c = 5 ;
-v[ c ] =  55 ;
-output v[ 5 ];
+a = b ;
+b = c ;
+c = i ;
 output  c ;
-i = 2 ;
+i = a ;
 }

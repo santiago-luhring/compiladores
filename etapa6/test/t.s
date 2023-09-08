@@ -1,17 +1,8 @@
 	.file	"t.c"
 	.text
-	.globl	a
-	.data
-	.align 4
-	.type	a, @object
-	.size	a, 4
-a:
-	.long	1076677837
 	.section	.rodata
-.LC2:
-	.string	"%f\n"
-.LC3:
-	.string	"aaaaaaaaaaaa"
+.LC0:
+	.string	"%d"
 	.text
 	.globl	main
 	.type	main, @function
@@ -24,37 +15,28 @@ main:
 	.cfi_offset 6, -16
 	movq	%rsp, %rbp
 	.cfi_def_cfa_register 6
-	movss	.LC0(%rip), %xmm0
-	movss	%xmm0, a(%rip)
-	movss	.LC1(%rip), %xmm0
-	movss	%xmm0, a(%rip)
-	movss	a(%rip), %xmm0
-	pxor	%xmm1, %xmm1
-	cvtss2sd	%xmm0, %xmm1
-	movq	%xmm1, %rax
-	movq	%rax, %xmm0
-	leaq	.LC2(%rip), %rax
-	movq	%rax, %rdi
-	movl	$1, %eax
-	call	printf@PLT
-	leaq	.LC3(%rip), %rax
+	subq	$16, %rsp
+	movq	%fs:40, %rax
+	movq	%rax, -8(%rbp)
+	xorl	%eax, %eax
+	leaq	-12(%rbp), %rax
+	movq	%rax, %rsi
+	leaq	.LC0(%rip), %rax
 	movq	%rax, %rdi
 	movl	$0, %eax
-	call	printf@PLT
+	call	__isoc99_scanf@PLT
 	movl	$0, %eax
-	popq	%rbp
+	movq	-8(%rbp), %rdx
+	subq	%fs:40, %rdx
+	je	.L3
+	call	__stack_chk_fail@PLT
+.L3:
+	leave
 	.cfi_def_cfa 7, 8
 	ret
 	.cfi_endproc
 .LFE0:
 	.size	main, .-main
-	.section	.rodata
-	.align 4
-.LC0:
-	.long	1077936128
-	.align 4
-.LC1:
-	.long	-1082130432
 	.ident	"GCC: (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0"
 	.section	.note.GNU-stack,"",@progbits
 	.section	.note.gnu.property,"a"

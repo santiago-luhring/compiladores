@@ -114,23 +114,23 @@ TAC* generateCode(AST* node)
 		child[i] = generateCode(node->child[i]);
 	switch(node->type){
 		case AST_SYMBOL: 	result = tacCreate(TAC_SYMBOL, node->symbol, 0, 0);break;
-        case AST_ADD: 		result = createBinop(TAC_ADD, child);break;    
-		case AST_SUB:		result = createBinop(TAC_SUB, child);break;
-		case AST_MUL:		result = createBinop(TAC_MUL, child);break;
-		case AST_DIV: 		result = createBinop(TAC_DIV, child);break;
-		case AST_GREATER: 	result = createBinop(TAC_GREATER, child);break;
-		case AST_LESSER: 	result = createBinop(TAC_LESSER, child);break;
-		case AST_EQUAL: 	result = createBinop(TAC_EQUAL, child);break;
-		case AST_GREATOP: 	result = createBinop(TAC_GREATOP, child);break;
-		case AST_LESSOP:	result = createBinop(TAC_LESSOP, child);break;
-		case AST_DIF: 		result = createBinop(TAC_DIF, child);break;
-		case AST_AND: 		result = createBinop(TAC_AND, child);break;
-		case AST_OR: 		result = createBinop(TAC_OR, child);break;
-		case AST_NOT: 		result = createBinop(TAC_NOT, child);break;
+        case AST_ADD: 		result = createBinop(TAC_ADD, child, node->datatype);break;    
+		case AST_SUB:		result = createBinop(TAC_SUB, child, node->datatype);break;
+		case AST_MUL:		result = createBinop(TAC_MUL, child, node->datatype);break;
+		case AST_DIV: 		result = createBinop(TAC_DIV, child, node->datatype);break;
+		case AST_GREATER: 	result = createBinop(TAC_GREATER, child, node->datatype);break;
+		case AST_LESSER: 	result = createBinop(TAC_LESSER, child, node->datatype);break;
+		case AST_EQUAL: 	result = createBinop(TAC_EQUAL, child, node->datatype);break;
+		case AST_GREATOP: 	result = createBinop(TAC_GREATOP, child, node->datatype);break;
+		case AST_LESSOP:	result = createBinop(TAC_LESSOP, child, node->datatype);break;
+		case AST_DIF: 		result = createBinop(TAC_DIF, child, node->datatype);break;
+		case AST_AND: 		result = createBinop(TAC_AND, child, node->datatype);break;
+		case AST_OR: 		result = createBinop(TAC_OR, child, node->datatype);break;
+		case AST_NOT: 		result = createBinop(TAC_NOT, child, node->datatype);break;
 
         case AST_ATTRIB: 	result = tacJoin(child[0], tacCreate(TAC_COPY, node->symbol, child[0]?child[0]->res:0, 0));break;
 		case AST_VECATTR: 	result = tacJoin(child[0], tacJoin(child[1], tacCreate(TAC_VECATTR, node->symbol, child[0]?child[0]->res:0, child[1]?child[1]->res:0)));break; 
-		case AST_INPUT: 	result = tacCreate(TAC_READ, makeTemp(), 0, 0);break;
+		case AST_INPUT: 	result = tacCreate(TAC_READ, makeTemp(0), 0, 0);break;
 		case AST_OUTPUTL:
 		case AST_NEXTOUT: 	result = tacJoin(tacJoin(child[0], tacCreate(TAC_PRINT, child[0]?child[0]->res:0, 0, 0)), child[1]);break;
 		case AST_RETURN: 	result = tacJoin(child[0], tacCreate(TAC_RET, child[0]?child[0]->res:0, 0, 0));break;
@@ -138,10 +138,10 @@ TAC* generateCode(AST* node)
 		case AST_IF: 		result = createIf(child); break;
         case AST_IFELWHILE: break;
 		
-		case AST_FUNC: 		result = tacJoin(child[0], tacCreate(TAC_CALL, makeTemp(), node->symbol, 0));break;
+		case AST_FUNC: 		result = tacJoin(child[0], tacCreate(TAC_CALL, makeTemp(node->datatype), node->symbol, 0));break;
 		case AST_ARGL:
 		case AST_NEXTARG: 	result = tacJoin(child[1], tacJoin(child[0], tacCreate(TAC_ARGPUSH, child[0]?child[0]->res:0, 0, 0)));break;
-		case AST_VEC: 		result = tacJoin(child[0], tacCreate(TAC_VEC, makeTemp(), node->symbol, child[0]?child[0]->res:0));break;
+		case AST_VEC: 		result = tacJoin(child[0], tacCreate(TAC_VEC, makeTemp(node->datatype), node->symbol, child[0]?child[0]->res:0));break;
 
 		case AST_DECFUNC: 	result = createFunction(tacCreate(TAC_SYMBOL, node->symbol, 0, 0), child[1], child[2]);break;
 		       
@@ -152,13 +152,13 @@ TAC* generateCode(AST* node)
     return result;
 }
 
-TAC* createBinop(int type, TAC* child[])
+TAC* createBinop(int type, TAC* child[], int datatype)
 {
 	HASH_NODE * op1;
 	HASH_NODE * op2;
 	if(child[0]) op1 = child[0]->res; else op1 = 0;
 	if(child[1]) op2 = child[1]->res; else op2 = 0;
-	return tacJoin(child[0], tacJoin(child[1], tacCreate(type, makeTemp(), op1, op2)));
+	return tacJoin(child[0], tacJoin(child[1], tacCreate(type, makeTemp(datatype), op1, op2)));
 }
 TAC* createIf(TAC* child[])
 {

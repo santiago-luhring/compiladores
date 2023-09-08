@@ -1,0 +1,55 @@
+\\ UFRGS - Compiladores - Marcelo Johann - 2023/1
+
+char c='x';
+int d= 5;
+int a= 100;
+int i=1;
+
+real f=2.5;
+
+
+\\\
+Este eh um comentario 
+de multiplas 
+linhas
+///
+int incn (int x, int n )
+  {
+  return x + n;
+  }
+  
+int main ()
+  {
+  a = 0;
+  d = d - i;
+  d = 5;
+  output d;
+  i = 2;
+
+
+  d = input(int);
+
+  if (i<10)
+    {
+    i = incn(i,1);
+    d = incn(d,d);
+    }
+
+  if (a==15)
+    {
+    a = a + 1;
+    output "A era=15\n";
+    }  
+    
+  if (i==100)
+    {
+    output "Nao tem como isso...\n";
+    }
+  else
+    output "OK!\n"; 
+ 
+  }
+
+
+
+
